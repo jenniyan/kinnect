@@ -7,7 +7,8 @@ The app Kinnect is a geolocator app that allows users with shared interests to l
 
 Application Context
 
-
+The app should runs on smart phone with ios and android system.
+The app should be able to interact with external app Wechat and Instagram.
 
 Functional Requirements
 
