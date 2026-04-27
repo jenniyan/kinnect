@@ -59,12 +59,13 @@ Integration with:
 
 ### Functional Requirements
 
-#### User Account Management
+#### 1. User Account Management
 - Users shall be able to:
   - Create an account (email or phone-based)
   - Log in and log out
   - Edit profile information
-  - Block other users (this entails your profile not being locatable/viewable by a blocked user)
+  - Block other users (this entails your profile not being locatable/viewable/message-able by a blocked user)
+  - Toggle between anonymous or display name
 - Thus user accounts should have:
   - Phone Number or Email
   - Password
@@ -72,7 +73,7 @@ Integration with:
   - Display name (which is optional if anonymous)
   - Bio
 
-#### Interest Tags
+#### 2. Interest Tags
 - Users shall be able to:
   - Select predefined interest categories (e.g guitar, crocheting)
   - Create custom tags under predefined interest categories
@@ -81,7 +82,7 @@ Integration with:
   - Searchable
   - Instantiable/customizable
 
-#### Real-time Geolocation Map
+#### 3. Real-time Geolocation Map
 - This system shall:
   - Display users on a map within a user-defined radius
     - If any user would like to disable location sharing, they location will be hidden. However, those with hidden locations will not have access to those with visible locations
@@ -90,26 +91,76 @@ Integration with:
   - User location
   - Visibility radius
 
-#### User Discovery
+#### 4. User Discovery
 - Users shall be able to search for pre-defined interest tags or specific tags
 - Users with shared interest tags shall be displayed on the map, with an indication of which tag(s) they have in common
 
-#### Messaging System
+#### 5. Messaging System
 - Users shall be able to:
   - Initiate chats with users within range
   - Create group chats based on shared interests
 - The system shall:
   - Support real-time messaging
 
-#### GPS Routing Feature (Custom Feature #1)
+#### 6. GPS Routing Feature (Custom Feature #1)
 - The system shall:
   - Provide navigation routes between users with shared interests
 - Users shall be able to:
   - Accept or decline routing requests
  
-#### External Chat Transfer (Custom Feature #2)
+#### 7. External Chat Transfer (Custom Feature #2)
 - Users shall be able to:
   - Export conversations to external apps (Instagram, WeChat)
 - The system shall:
   - Provide links or handles for transition
   
+### Use Cases
+
+#### Use Case 1 (User Account Management):
+- Basic Flow:
+    1.
+    2.
+- Alternative Flow:
+- Exceptional Flow: 
+
+#### Use Case 2 (Interest Tags):
+- Basic Flow:
+    1.
+    2.
+- Alternative Flow:
+- Exceptional Flow: 
+
+#### Use Case 3 (Real-time Geolocation Map):
+- Basic Flow:
+    1.
+    2.
+- Alternative Flow:
+- Exceptional Flow: 
+
+#### Use Case 4 (User Discovery):
+- Basic Flow:
+    1.
+    2.
+- Alternative Flow:
+- Exceptional Flow: 
+
+#### Use Case 5 (Messaging System):
+- Basic Flow:
+    1.
+    2.
+- Alternative Flow:
+- Exceptional Flow: 
+
+#### Use Case 6 (GPS Routing Feature):
+- Basic Flow:
+    1.
+    2.
+- Alternative Flow:
+- Exceptional Flow: 
+
+#### Use Case 7 (External Chat Transfer):
+- Basic Flow:
+    1.
+    2.
+- Alternative Flow:
+- Exceptional Flow: 
