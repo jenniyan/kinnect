@@ -59,13 +59,57 @@ Integration with:
 
 ### Functional Requirements
 
-The app should be able to allow users to specify a range around them to show other users with similiar interest on map.
-The app should be able to allow users to define their own tags under preset blocks of interest.
-The app should be able to allow users to create personal bio.
-The app should be able to allow users to be anonymous or having real name.
-The app should be able to allow users to block other users they don't want to see.
-The app should be able to allow users to create chat chat for matching users within range.
-The app should be able to allow users to searching other users with certain tags, icon of other users will show the tags that the user have searched on the map.
-The app should be able to allow users to use gps tracking to route other users with shared interests.
-The app should be able to allow users to move their chat to external app like instagram or wechat.
+#### User Account Management
+- Users shall be able to:
+  - Create an account (email or phone-based)
+  - Log in and log out
+  - Edit profile information
+  - Block other users (this entails your profile not being locatable/viewable by a blocked user)
+- Thus user accounts should have:
+  - Phone Number or Email
+  - Password
+  - User ID (unique)
+  - Display name (which is optional if anonymous)
+  - Bio
+
+#### Interest Tags
+- Users shall be able to:
+  - Select predefined interest categories (e.g guitar, crocheting)
+  - Create custom tags under predefined interest categories
+  - Add and remove tags from their profile
+- Thus iinterest tags should be:
+  - Searchable
+  - Instantiable/customizable
+
+#### Real-time Geolocation Map
+- This system shall:
+  - Display users on a map within a user-defined radius
+    - If any user would like to disable location sharing, they location will be hidden. However, those with hidden locations will not have access to those with visible locations
+  - Update user positions in real time
+- To support this system, we will need:
+  - User location
+  - Visibility radius
+
+#### User Discovery
+- Users shall be able to search for pre-defined interest tags or specific tags
+- Users with shared interest tags shall be displayed on the map, with an indication of which tag(s) they have in common
+
+#### Messaging System
+- Users shall be able to:
+  - Initiate chats with users within range
+  - Create group chats based on shared interests
+- The system shall:
+  - Support real-time messaging
+
+#### GPS Routing Feature (Custom Feature #1)
+- The system shall:
+  - Provide navigation routes between users with shared interests
+- Users shall be able to:
+  - Accept or decline routing requests
+ 
+#### External Chat Transfer (Custom Feature #2)
+- Users shall be able to:
+  - Export conversations to external apps (Instagram, WeChat)
+- The system shall:
+  - Provide links or handles for transition
   
