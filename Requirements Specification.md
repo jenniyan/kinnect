@@ -132,35 +132,25 @@ Integration with:
 
 #### Use Case 3 (Real-time Geolocation Map):
 - Basic Flow:
-    1.
-    2.
 - Alternative Flow:
 - Exceptional Flow: 
 
 #### Use Case 4 (User Discovery):
 - Basic Flow:
-    1.
-    2.
 - Alternative Flow:
 - Exceptional Flow: 
 
 #### Use Case 5 (Messaging System):
 - Basic Flow:
-    1.
-    2.
 - Alternative Flow:
 - Exceptional Flow: 
 
 #### Use Case 6 (GPS Routing Feature):
 - Basic Flow:
-    1.
-    2.
 - Alternative Flow:
 - Exceptional Flow: 
 
 #### Use Case 7 (External Chat Transfer):
 - Basic Flow:
-    1.
-    2.
 - Alternative Flow:
 - Exceptional Flow: 
