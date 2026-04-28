@@ -211,14 +211,61 @@ Integration with:
 
 #### Use Case 7 (User Discovery):
 - Basic Flow:
+  1. User selects "User Discovery".
+  2. System displays nearby users based on the user’s current location and interests.
+  3. User browses the list or map of discovered users.
+  4. User selects one discovered user to view more details.
+  5. System displays the selected user’s public profile information.
+  6. Use case end.
 - Alternative Flow:
-- Exceptional Flow: 
+  A1: Filter Discovery Results
+    1. At step 3 of basic flow, user applies filters such as distance, shared interests, or age range.
+    2. System updates the discovery results according to the selected filters.
+    3. System continues to step 3 of basic flow.
+
+  A2: Search by Specific Interest
+    1. At step 2 of basic flow, user enters or selects a specific interest.
+    2. System displays only users matching that interest.
+    3. System continues to step 3 of basic flow.
+- Exceptional Flow:
+  E1: No Users Found
+    1. At step 2 of basic flow, system determines that there are no nearby users matching the current location or interests.
+    2. System shows a "No users found" message.
+    3. System allows the user to refresh, adjust filters, or terminate the session.
+
+  E2: Location Unavailable
+    1. At step 2 of basic flow, system determines that the user’s current location is unavailable or location permission is denied.
+    2. System shows a "Location unavailable" message.
+    3. System allows the user to enable location service, retry, or terminate the session.
 
 #### Use Case 8 (Messaging System):
 - Basic Flow:
+  1. User selects "Messaging System".
+  2. System displays the user’s existing chats or available contacts.
+  3. User selects a chat or another user to start a conversation.
+  4. System opens the chat window.
+  5. User enters a message and selects "Send".
+  6. System sends the message to the selected user or group.
+  7. System displays the new message in the conversation.
+  8. Use case end.
 - Alternative Flow:
+  A1: Start a New Chat
+    1. At step 3 of basic flow, user selects a new user instead of an existing chat.
+    2. System creates a new conversation window.
+    3. System continues to step 4 of basic flow.
+  A2: Group Messaging
+    1. At step 3 of basic flow, user selects a group chat.
+    2. System opens the selected group conversation.
+    3. System continues to step 5 of basic flow.
 - Exceptional Flow: 
-
+  E1: Message Send Failure
+    1. At step 6 of basic flow, system fails to send the message because of network or server issues.
+    2. System shows a "Message failed to send" message.
+    3. System allows the user to retry sending the message or terminate the session.
+  E2: Empty Message
+    1. At step 5 of basic flow, system determines that the message input is empty.
+    2. System shows a "Message cannot be empty" message.
+    3. System returns to step 5 and allows the user to re-enter the message.
 #### Use Case 9 (GPS Routing Feature):
 - Basic Flow:
   1. User selects another user from the map or chat who shares interests.
