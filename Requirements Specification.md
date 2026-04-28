@@ -116,12 +116,39 @@ Integration with:
   
 ### Use Cases
 
-#### Use Case 1 (User Account Management):
+#### Use Case 1 (Create User Account):
+- Basic Flow:
+    1. User select "Create Account".
+    2. User enter the Phone number, Email, Password, User ID, and select "display name".
+    3. User enter personal bio.
+    4. System verifies the Phone Number, Email and User ID are not repeat with other user, and none of the Phone number, Email, Password, User ID are empty.
+    5. System shows account successfully created.
+    6. User select "return to homepage".
+    7. Use case end
+- Alternative Flow:
+  - A1: Optional bio
+      1. At step 3 of basic flow, user didn't enter personal bio.
+      2. System continues to step 4 of basic flow.
+  - A2: Anonymous
+      1. At step 2 of basic flow, user select "anonymous" instead of "display name".
+      2. System continues to step 3 of basic flow.
+- Exceptional Flow: 
+  - E1: Repeated information
+      1. At step 4 of basic flow, system verified that at least one of the Phone number, Email, Password, User ID is repeated with other users.
+      2. System returns to step 2 and shows "repeated" message near the repeated information.
+      3. System allows a re-entry of profile information or terminate the session.
+  - E2: Missing information
+      1. At step 2 of basic flow, user leave at least one of the Phone number or Email, Password, User ID blank.
+      2. System verified that at least one of these information are blank
+      3. System returns to step 2 and shows "can't be empty" message near the emmpty information.
+      4. System allows a re-entry of profile information or terminate the session.
+
+#### Use Case 1 (Login Account):
 - Basic Flow:
     1.
     2.
 - Alternative Flow:
-- Exceptional Flow: 
+- Exceptional Flow:
 
 #### Use Case 2 (Interest Tags):
 - Basic Flow:
