@@ -356,3 +356,28 @@ Integration with:
     2. System notifies initiating user.
     3. Conversation continues within the app.
     4. Use case ends.
+
+#### Use Case 11 (Create Location‑Bound Video):
+- Basic Flow:
+  1. User selects “Create Location Video”.
+  2. System opens camera or video upload interface.
+  3. User records or uploads a short video.
+  4. System retrieves the user’s current GPS location.
+  5. User optionally adds a caption or interest tag.
+  6. User selects visibility settings.
+  7. User confirms and publishes the video.
+  8. System stores the video with its location metadata.
+  9. Use case ends.
+- Alternative Flow:
+  - A1: Upload Existing Video
+    1. At step 2, user chooses “Upload from gallery”.
+    2. System continues from step 4.
+- Exceptional Flow:
+  - E1: Location Permission Denied
+    1. At step 4, system cannot access GPS.
+    2. System shows “Location required to post video”.
+    3. User may enable location or cancel.
+  - E2: Transfer declined by other user
+    1. At step 3, system fails to process the video.
+    2. System shows “Upload failed”.
+    3. User may retry or cancel.
