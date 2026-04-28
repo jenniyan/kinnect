@@ -71,7 +71,9 @@ Integration with:
   - Password
   - User ID (unique)
   - Display name (which is optional if anonymous)
-  - Bio
+  - Bio (optional)
+  - External application account information (optional)
+    - This feature is used for external app chat transfer
 
 #### 2. Interest Tags
 - Users shall be able to:
