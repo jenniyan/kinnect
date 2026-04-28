@@ -196,10 +196,63 @@ Integration with:
 
 #### Use Case 8 (GPS Routing Feature):
 - Basic Flow:
+  1. User selects another user from the map or chat who shares interests.
+  2. User selects “Request Route” or “Navigate”.
+  3. System sends a routing request to the selected user.
+  4. The selected user receives a notification with options to accept or decline.
+  5. Selected user accepts the routing request.
+  6. System retrieves both users’ locations.
+  7. System generates a navigation route using map services.
+  8. System displays the route on the map for the requesting user.
+  9. Use case end.
 - Alternative Flow:
-- Exceptional Flow: 
+  - A1: Receiver initiates routing
+    1. At step 2, instead of the first user initiating, the second user selects “Request Route”.
+    2. System continues from step 3 of the basic flow.
+  - A2: Continuous route updates
+    1. After step 8, system continuously updates the route as users move in real time.
+    2. Use case continues until navigation is stopped.
+- Exceptional Flow:
+  - E1: Routing request declined
+    1. At step 4, selected user declines the request.
+    2. System notifies the requesting user that the request was declined.
+    3. Use case ends.
+  - E2: Location unavailable
+    1. At step 6, system detects that one or both users have disabled location services.
+    2. System displays an error message: “Location unavailable for routing.”
+    3. System cancels routing request.
+    4. Use case ends.
+  - E3: Network or API failure
+    1. At step 7, system fails to retrieve route due to network or map API issue.
+    2. System displays “Unable to generate route. Try again later.”
+    3. Use case ends.
 
-#### Use Case 7 (External Chat Transfer):
+#### Use Case 9 (External Chat Transfer):
 - Basic Flow:
+  1. User opens an existing chat with another user.
+  2. User selects “Transfer Chat” or “Move to External App”.
+  3. System displays a list of supported external apps (e.g., Instagram, WeChat, WhatsApp, Messages, Discord, Telegram).
+  4. User selects a preferred external platform.
+  5. System generates or retrieves the user’s external contact information (e.g., username, link).
+  6. System shares this information with the other user in chat.
+  7. Users continue conversation on the selected external platform.
+  8. Use case end.
 - Alternative Flow:
-- Exceptional Flow: 
+  - A1: Manual handle entry
+    1. At step 5, if external account is not linked, system prompts user to manually enter their handle.
+    2. User enters their external account information.
+    3. System continues to step 6.
+  - A2: Both users agree before transfer
+    1. After step 4, system requests confirmation from the other user.
+    2. Other user accepts transfer.
+    3. System continues to step 5.
+- Exceptional Flow:
+  - E1: Missing external account info
+    1. At step 5, user does not provide required contact information.
+    2. System displays “External account information required.”
+    3. System allows re-entry or cancellation.
+  - E2: Transfer declined by other user
+    1. At step 6, the other user declines to move to an external platform.
+    2. System notifies initiating user.
+    3. Conversation continues within the app.
+    4. Use case ends.
