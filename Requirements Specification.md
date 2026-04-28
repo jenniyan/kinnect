@@ -199,7 +199,7 @@ Integration with:
   - E1: Cancel Editing
     1. At step 4 of basic flow, user click "Cancel" instead of "Save".
     2. System prompt to confirm the discard of change.
-    3. Profile revert to its original state without updates.
+    3. System revert Profile to its original state without updates.
   - E2: Session Time-out
     1. System terminates session during editing due to inactivity.
     2. System asks user to re-authenticate before saving, optionally saving input locally.
@@ -225,12 +225,43 @@ Integration with:
     1. At step 5 of basic flow, user instead select "No". 
     3. System revert blocking status to its original state without updates.
 
-#### Use Case 5 (Interest Tags):
+#### Use Case 5 (Add Interest Tags):
 - Basic Flow:
-    1. 
-    2. 
+    1. User open their profile page.
+    2. User select "Edit Interest Tags"
+    3. User types a keyword into the search bar to find an existing interest tag.
+    4. User select desired tagsfrom search result.
+    5. System validates the selection, adds tags to the profile, refresh the display.
+    6. Use case end.
 - Alternative Flow:
-- Exceptional Flow: 
+  - A1: Create Non-existing Tag
+    1. At step 4 of the basic flow, user searches for a tag that does not exist.
+    2. System presents a "Create New" option.
+    3. User clicks "Create New," enters the new tag name and chooses a category, then clicks Save.
+    4. System creates the new tag and assigns it.
+  - A2: Select from Suggested Categories
+    1. At step 3 of basic flow, user clicks into the tag component to view all available tags.
+    2. User selects a specific Tag Category (e.g., "Sports") to filter tags.
+    3. User selects a tag from the filtered list.
+    4. System continues to step 5 of basic flow.
+  - A3: Multi-Select Tags
+    1. At step 4 of basic flow and step 3 of A2, user searches and selects one tag.
+    2. The component remains open, allowing the user to search and select multiple tags before closing.
+- Exceptional Flow:
+  - E1: User Cancel Assignment
+    1. User clicks "Edit Interesting Tag," but decides not to select one.
+    2. User clicks "Cancel" or clicks outside the component, abandoning the addition.
+  - E2: Tag Limit Exceeded
+    1. User tries to add a new tag.
+    2. System identifies that the profile already has the maximum allowable tags
+    3. System displays an error message: "Max tags exceeded".
+    4. User must delete an existing tag first.
+  - E3: Tag Name Conflict
+    1. User attempts to create a new tag with repeated name.
+    2. System stops the creation and notifies the user of the naming conflict.
+  - E4: Duplicate Tag Assignment
+    1. User selects a tag already added in the profile.
+    2. System displays an error: "Tag already added".
 
 #### Use Case 6 (Real-time Geolocation Map):
 - Basic Flow:
