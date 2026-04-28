@@ -218,22 +218,22 @@ Integration with:
   5. System displays the selected user’s public profile information.
   6. Use case end.
 - Alternative Flow:
-  A1: Filter Discovery Results
+  - A1: Filter Discovery Results
     1. At step 3 of basic flow, user applies filters such as distance, shared interests, or age range.
     2. System updates the discovery results according to the selected filters.
     3. System continues to step 3 of basic flow.
 
-  A2: Search by Specific Interest
+  - A2: Search by Specific Interest
     1. At step 2 of basic flow, user enters or selects a specific interest.
     2. System displays only users matching that interest.
     3. System continues to step 3 of basic flow.
 - Exceptional Flow:
-  E1: No Users Found
+  - E1: No Users Found
     1. At step 2 of basic flow, system determines that there are no nearby users matching the current location or interests.
     2. System shows a "No users found" message.
     3. System allows the user to refresh, adjust filters, or terminate the session.
 
-  E2: Location Unavailable
+  - E2: Location Unavailable
     1. At step 2 of basic flow, system determines that the user’s current location is unavailable or location permission is denied.
     2. System shows a "Location unavailable" message.
     3. System allows the user to enable location service, retry, or terminate the session.
@@ -249,20 +249,20 @@ Integration with:
   7. System displays the new message in the conversation.
   8. Use case end.
 - Alternative Flow:
-  A1: Start a New Chat
+  - A1: Start a New Chat
     1. At step 3 of basic flow, user selects a new user instead of an existing chat.
     2. System creates a new conversation window.
     3. System continues to step 4 of basic flow.
-  A2: Group Messaging
+  - A2: Group Messaging
     1. At step 3 of basic flow, user selects a group chat.
     2. System opens the selected group conversation.
     3. System continues to step 5 of basic flow.
 - Exceptional Flow: 
-  E1: Message Send Failure
+  - E1: Message Send Failure
     1. At step 6 of basic flow, system fails to send the message because of network or server issues.
     2. System shows a "Message failed to send" message.
     3. System allows the user to retry sending the message or terminate the session.
-  E2: Empty Message
+  - E2: Empty Message
     1. At step 5 of basic flow, system determines that the message input is empty.
     2. System shows a "Message cannot be empty" message.
     3. System returns to step 5 and allows the user to re-enter the message.
