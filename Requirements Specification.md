@@ -126,20 +126,20 @@ Integration with:
     4. System verifies the Phone Number, Email and User ID are not repeat with other user, and none of the Phone number, Email, Password, User ID are empty.
     5. System shows account successfully created.
     6. User select "return to homepage".
-    7. Use case end
+    7. Use case end.
 - Alternative Flow:
-  - A1: Optional bio
+  - A1: Optional Bio
       1. At step 3 of basic flow, user didn't enter personal bio.
       2. System continues to step 4 of basic flow.
-  - A2: Anonymous
+  - A2: Anonymous Option
       1. At step 2 of basic flow, user select "anonymous" instead of "display name".
       2. System continues to step 3 of basic flow.
 - Exceptional Flow: 
-  - E1: Repeated information
+  - E1: Repeated Information
       1. At step 4 of basic flow, system verified that at least one of the Phone number, Email, Password, User ID is repeated with other users.
       2. System returns to step 2 and shows "repeated" message near the repeated information.
       3. System allows a re-entry of profile information or terminate the session.
-  - E2: Missing information
+  - E2: Missing Information
       1. At step 2 of basic flow, user leave at least one of the Phone number or Email, Password, User ID blank.
       2. System verified that at least one of these information are blank
       3. System returns to step 2 and shows "can't be empty" message near the emmpty information.
@@ -151,14 +151,14 @@ Integration with:
     2. User enter the Phone number in first box and Password in second box.
     3. System verifies the Phone number and Password are belongs to an existing account.
     4. System redirect the page to the homepage after login.
-    5. Use case end
+    5. Use case end.
 - Alternative Flow:
   - A1: Login by Email
     1. At step 2 of basic flow, user enter the Email in first box and Password in second box.
     2. System verifies the Email and Password are belongs to an existing account.
     3. System continues to step 4 of basic flow.
 - Exceptional Flow:
-  - E1: Invalid password
+  - E1: Invalid Password
     1. At step 3 of basic flow, system determines that the Password didn't match the Phone number or Email
     2. System returns to step 2 and shows "Invalid account or password" message.
     3. System allows a re-entry of information or terminate the session.
@@ -169,34 +169,57 @@ Integration with:
 
 #### Use Case 3 (Edit Profile):
 - Basic Flow:
-    1. 
-    2. 
+    1. User open their profile page.
+    2. User select "Edit Profile".
+    3. User could change at least one of the Phone number, Email, Password, User ID, and Anonymous option.
+    4. User select "Save".
+    5. System validates the new information.
+    6. System redirect the page to the profile page.
+    7. Use case end.
 - Alternative Flow:
-- Exceptional Flow: 
+  - A1: Invalid Input
+    1. At step 3 of basic flow, user entered information with invalid format, leave it empty, or repeated with other user.
+    2. System highlight error and prevent submission.
+    3. User correct the information and submit again.
+- Exceptional Flow:
+  - E1: Cancel Editing
+    1. At step 4 of basic flow, user click "Cancel" instead of "Save".
+    2. System prompt to confirm the discard of change.
+    3. Profile revert to its original state without updates.
+  - E2: Session Time-out
+    1. System terminates session during editing due to inactivity.
+    2. System asks user to re-authenticate before saving, optionally saving input locally.
 
-#### Use Case 4 (Interest Tags):
+#### Use Case 4 (Block Other Users):
 - Basic Flow:
     1. 
     2. 
 - Alternative Flow:
 - Exceptional Flow: 
 
-#### Use Case 5 (Real-time Geolocation Map):
+#### Use Case 5 (Interest Tags):
+- Basic Flow:
+    1. 
+    2. 
+- Alternative Flow:
+- Exceptional Flow: 
+
+#### Use Case 6 (Real-time Geolocation Map):
 - Basic Flow:
 - Alternative Flow:
 - Exceptional Flow: 
 
-#### Use Case 6 (User Discovery):
+#### Use Case 7 (User Discovery):
 - Basic Flow:
 - Alternative Flow:
 - Exceptional Flow: 
 
-#### Use Case 7 (Messaging System):
+#### Use Case 8 (Messaging System):
 - Basic Flow:
 - Alternative Flow:
 - Exceptional Flow: 
 
-#### Use Case 8 (GPS Routing Feature):
+#### Use Case 9 (GPS Routing Feature):
 - Basic Flow:
   1. User selects another user from the map or chat who shares interests.
   2. User selects “Request Route” or “Navigate”.
@@ -229,7 +252,7 @@ Integration with:
     2. System displays “Unable to generate route. Try again later.”
     3. Use case ends.
 
-#### Use Case 9 (External Chat Transfer):
+#### Use Case 10 (External Chat Transfer):
 - Basic Flow:
   1. User opens an existing chat with another user.
   2. User selects “Transfer Chat” or “Move to External App”.
