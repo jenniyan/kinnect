@@ -143,36 +143,58 @@ Integration with:
       3. System returns to step 2 and shows "can't be empty" message near the emmpty information.
       4. System allows a re-entry of profile information or terminate the session.
 
-#### Use Case 1 (Login Account):
+#### Use Case 2 (Login Account):
 - Basic Flow:
-    1.
-    2.
+    1. User select "Login Account".
+    2. User enter the Phone number in first box and Password in second box.
+    3. System verifies the Phone number and Password are belongs to an existing account.
+    4. System redirect the page to the homepage after login.
+    5. Use case end
 - Alternative Flow:
+  - A1: Login by Email
+    1. At step 2 of basic flow, user enter the Email in first box and Password in second box.
+    2. System verifies the Email and Password are belongs to an existing account.
+    3. System continues to step 4 of basic flow.
 - Exceptional Flow:
+  - E1: Invalid password
+    1. At step 3 of basic flow, system determines that the Password didn't match the Phone number or Email
+    2. System returns to step 2 and shows "Invalid account or password" message.
+    3. System allows a re-entry of information or terminate the session.
+  - E2: Invalid Account
+    1. At step 3 of basic flow, system determines that the Phone number or Email didn't correspond to an existing account.
+    2. System returns to step 2 and shows "Invalid account or password" message.
+    3. System allows a re-entry of information or terminate the session.
 
-#### Use Case 2 (Interest Tags):
+#### Use Case 3 (Edit Profile):
 - Basic Flow:
-    1.
-    2.
+    1. 
+    2. 
 - Alternative Flow:
 - Exceptional Flow: 
 
-#### Use Case 3 (Real-time Geolocation Map):
+#### Use Case 4 (Interest Tags):
+- Basic Flow:
+    1. 
+    2. 
+- Alternative Flow:
+- Exceptional Flow: 
+
+#### Use Case 5 (Real-time Geolocation Map):
 - Basic Flow:
 - Alternative Flow:
 - Exceptional Flow: 
 
-#### Use Case 4 (User Discovery):
+#### Use Case 6 (User Discovery):
 - Basic Flow:
 - Alternative Flow:
 - Exceptional Flow: 
 
-#### Use Case 5 (Messaging System):
+#### Use Case 7 (Messaging System):
 - Basic Flow:
 - Alternative Flow:
 - Exceptional Flow: 
 
-#### Use Case 6 (GPS Routing Feature):
+#### Use Case 8 (GPS Routing Feature):
 - Basic Flow:
 - Alternative Flow:
 - Exceptional Flow: 
