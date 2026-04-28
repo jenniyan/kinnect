@@ -192,10 +192,24 @@ Integration with:
 
 #### Use Case 4 (Block Other Users):
 - Basic Flow:
-    1. 
-    2. 
+    1. User open their friend list.
+    2. User select the friend they want to block.
+    3. User select "Block the User".
+    4. System shows a confirmation dialog.
+    5. User select "Yes".
+    6. System validates the blocking status of user.
+    7. Use case end.
 - Alternative Flow:
-- Exceptional Flow: 
+  - A1: Multiple Blocking
+    1. At step 2 of basic flow, user select "Block Users".
+    2. User select friends in the list that they want to block.
+    3. System shows a confirmation dialog.
+    4. User select "Yes".
+    5. System validates the block list of user.
+- Exceptional Flow:
+  - E1: Not Confirm the Blocking
+    1. At step 5 of basic flow, user instead select "No". 
+    3. System revert blocking status to its original state without updates.
 
 #### Use Case 5 (Interest Tags):
 - Basic Flow:
