@@ -115,6 +115,20 @@ Integration with:
   - Export conversations to external apps (Instagram, WeChat)
 - The system shall:
   - Provide links or handles for transition
+ 
+#### 8. Location-Triggered Video Posts (Custom Feature #3)
+- Users shall be able to:
+  - Record or upload a short video at their current location
+  - Attach the video to a precise GPS coordinate
+  - Add an optional tag or caption
+  - Choose visibility settings(public, interest-based, friends-only)
+  - Delete or edit their posted videos
+- The system shall:
+  - Detect when a user enters the radius of a location-anchored video
+  - Display a pop-up preview
+  - Allow users to view, like, or start a chat with the video creater
+  - prevent video triggering if the viewer has blocked the creator
+  - Prevent triggering for users who disabled location sharing
   
 ### Use Cases
 
