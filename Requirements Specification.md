@@ -293,10 +293,10 @@ Integration with:
     3. System continues to step 6 of basic flow.
    
 - Exceptional Flow:
--  E1: Location Permission Denied
-  1. At step 2 of basic flow, detects that location permission is denied.
-  2. System displays "Location permission required to use map".
-  3. System prompts the user to enable location services or terminate the session.
+  - E1: Location Permission Denied
+    1. At step 2 of basic flow, detects that location permission is denied.
+    2. System displays "Location permission required to use map".
+    3. System prompts the user to enable location services or terminate the session.
   - E2: GPS Unavailable
     1. At step 3 of basic flow, systems canonot retrieve accurate GPS data.
     2. System displays "Unable to determine location".
