@@ -265,8 +265,46 @@ Integration with:
 
 #### Use Case 6 (Real-time Geolocation Map):
 - Basic Flow:
+  1. User selects "Map" or opens the home screen map view.
+  2. System requests and verifies the user's location permissions.
+  3. System retrieves the user's current GPS location.
+  4. System displays a real-time map centered on the user's location.
+  5. System displays nearby users within the user-defined radius.
+  6. System continuously updates user positions in real time.
+  7. User views nearby users and optionally selects one for more details.
+  8. Use case end.
+ 
+
 - Alternative Flow:
-- Exceptional Flow: 
+ -A1: Adjust Visibility Radius
+  1. At step 5 of basic flow, user adjusts their visibility radius.
+  2. System updates the map to reflect the new radius and refreshes displayed users.
+  3. System continues to step 6 of basic flow.
+
+  - A2: Hide Location
+    1. At step 2 of basic flow, user has disabled location sharing.
+    2. System hides the user's location from others.
+    3. System prevents the user from viewing nearby users.
+    4. Use case ends.
+   
+  - A3: Manual Refresh
+    1. At step 6 of basic flow, user selects "Refresh map".
+    2. System re-fetches nearby users and updates their positions.
+    3. System continues to step 6 of basic flow.
+   
+- Exceptional Flow:
+-  E1: Location Permission Denied
+  1. At step 2 of basic flow, detects that location permission is denied.
+  2. System displays "Location permission required to use map".
+  3. System prompts the user to enable location services or terminate the session.
+  - E2: GPS Unavailable
+    1. At step 3 of basic flow, systems canonot retrieve accurate GPS data.
+    2. System displays "Unable to determine location".
+    3. System allows the user to retry or terminate the session.
+  - E3: No nearby Users
+    1. At step 5 of basic flow, system determines there are no users within the radius.
+    2. System displays "No nearby users found".
+    3. System allows user to adjust radius, refresh, or terminate the session.
 
 #### Use Case 7 (User Discovery):
 - Basic Flow:
