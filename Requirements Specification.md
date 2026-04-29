@@ -276,7 +276,7 @@ Integration with:
  
 
 - Alternative Flow:
-  -A1: Adjust Visibility Radius
+  - A1: Adjust Visibility Radius
     1. At step 5 of basic flow, user adjusts their visibility radius.
     2. System updates the map to reflect the new radius and refreshes displayed users.
     3. System continues to step 6 of basic flow.
