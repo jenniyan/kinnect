@@ -9,5 +9,5 @@ We worked on the Prep the Pitch slideshow for our group. We brainstormed our own
 
 Week 5 Discussion 5/1/26 (In-Person Meeting):
 Attendees:  Yuxuan, Zhengyu Dong, Niharika Yalla, Jennifer Yan.
-We went over the Homework 2 assignment as a group ...
+We went over the Homework 2 assignment as a class.
 
