@@ -8,6 +8,6 @@ Attendees: Yuxuan, Zhengyu Dong, Jennifer Yan, Niharika Yalla.
 We worked on the Prep the Pitch slideshow for our group. We brainstormed our own 2 custom features to implement: so far we came up with gps tracking to route users with shared interests (within range) to one another, and allowing users to take their chat to other communication apps (implementing that option within the app). 
 
 Week 5 Discussion 5/1/26 (In-Person Meeting):
-Attendees:  Yuxuan, Zhengyu Dong, Niharika Yalla.
+Attendees:  Yuxuan, Zhengyu Dong, Niharika Yalla, Jennifer Yan.
 We went over the Homework 2 assignment as a group ...
 
