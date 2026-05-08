@@ -3,7 +3,8 @@
 The architecture we intend to use for this project will be the client-server process.
 
 ## Frontend
-The frontend of our application will be build with ReactJS. ReactJS is a modern industry standard 
+The frontend of our application will be build with ReactJS. ReactJS is a modern industry standard Javascript library for building user interfaces. 
+Our frontend should be component-based
 
 ## Backend
 Our backend framework will be Node.js and Express.
