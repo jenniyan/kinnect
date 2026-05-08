@@ -13,4 +13,4 @@ We went over the Homework 2 assignment as a class.
 
 Week 6 Discussion 5/8/26 (In-Person Meeting):
 Attendees: Yuxuan, Zhengyu Dong, Xinlei Liang (Ethan), Niharika Yalla, Jennifer Yan
-We went over our plan with our TA. 
+We went over our plan as a grouo and then discussed it with our TA. 
