@@ -1,6 +1,6 @@
 # Architecture Summary
 
-The architecture we intend to use for this project will be the client-server process.
+The architecture we intend to use for this project will be the client-server pattern.
 
 ## Frontend
 Our frontend should be component-based, consist 4 components:
