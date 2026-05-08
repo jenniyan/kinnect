@@ -15,6 +15,6 @@ For our database, we will use PostgreSQL.
 
 # Platform and Languages
 
-# Communication protocols
+# Communication Protocols
 
 # Component Functions
