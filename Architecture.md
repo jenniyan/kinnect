@@ -4,17 +4,24 @@ The architecture we intend to use for this project will be the client-server pat
 
 ## Frontend
 Our frontend should be component-based, consist 4 components:
- - Map UI, responsible for function of live map and pins
- - Profile UI, 
- - Chat UI, 
- - Video UI, 
+ - Map UI
+ - Profile UI
+ - Chat UI
+ - Video UI
 
 ## Backend
-Our backend framework will be Node.js and Express.
+Our backend should consist 4 components:
+ - User service
+ - Location service
+ - Tag service
+ - Chat service
 
 ## Database
-
-For our database, we will use PostgreSQL.
+Our databas should consist 4 components:
+ - User database
+ - Location cache
+ - Message database
+ - Media storage
 
 # Platform and Languages
 
