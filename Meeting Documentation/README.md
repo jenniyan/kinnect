@@ -11,3 +11,6 @@ Week 5 Discussion 5/1/26 (In-Person Meeting):
 Attendees:  Yuxuan, Zhengyu Dong, Niharika Yalla, Jennifer Yan.
 We went over the Homework 2 assignment as a class.
 
+Week 6 Discussion 5/8/26 (In-Person Meeting):
+Attendees: 
+We went over our plan with our TA. 
