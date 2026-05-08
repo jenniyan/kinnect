@@ -37,3 +37,7 @@ For our database, we will use PostgreSQL.
 # Communication Protocols
 
 # Component Functions
+
+# Connector Examples
+
+
