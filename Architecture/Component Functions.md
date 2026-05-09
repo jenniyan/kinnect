@@ -20,6 +20,10 @@ This component generally provides functions to delivers messages between users i
 
 # Database Components
 ## User database
+This component is the database to stores user profiles, including credentials, profile info, tag selections, block lists.
 ## Location cache
+This component is the temporary memory that stores GPS coordinates.
 ## Message database
+This component is the database to stores full chat history.
 ## Media storage
+This component is the storage to store video files for Location-Triggered Video Posts.
