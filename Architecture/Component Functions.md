@@ -10,8 +10,11 @@ This component generally provide functions for UI of video, including
 
 # Backend Components
 ## User service
+This component generally provide functions to handle changes in user profile, such as: creating accounts, logging in, updating profiles, toggling anonymous mode, and managing block lists.
 ## Location service
+This component generally provide functions to receives GPS coordinates from every active user's phone every few seconds, stores them in the fast location cache, shows all non-anonymous user's location with a range, and powers GPS routing.
 ## Tag service
+
 ## Chat service
 
 # Database Components
