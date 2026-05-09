@@ -17,7 +17,7 @@ Our backend should consist 4 components:
  - Chat service
 
 ## Database
-Our databas should consist 4 components:
+Our database should consist 4 components:
  - User database
  - Location cache
  - Message database
