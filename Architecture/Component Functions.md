@@ -14,11 +14,11 @@ This component generally provide functions to handle changes in user profile, su
 ## Location service
 This component generally provide functions to receives GPS coordinates from every active user's phone every few seconds, stores them in the fast location cache, shows all non-anonymous user's location with a range, and powers GPS routing.
 ## Tag service
-
+This component generally provides functions to maintains the full list of predefined interest categories, allows users to create custom tags under those categories, and handles tag search. Also showing users with shared tag.
 ## Chat service
+This component generally provides functions to delivers messages between users instantly by websocket, include 1-1 chat, group chat, and generates the external links or handles needed for the Instagram/WeChat export feature.
 
 # Database Components
-
 ## User database
 ## Location cache
 ## Message database
