@@ -13,4 +13,4 @@
 ## Database
  - We will use PostgreSQL for our User Database and Message Database. Because it has excellent support for structured data like profiles and chat history, and has a strong ecosystem. Use Supabase as a managed host to avoid ops complexity.
  - We will use Redis for our Location Cache. Because it's built for fast in-memory key-value storage, perfect for GPS coordinates that update every few seconds.
- - We will use AWS S3 or Cloudflare R2 for Media Storage, which are industry standard platform for storing video files with metadata. We could use signed URLs to attach GPS coordinates and visibility settings as object metadata.
+ - We will use Cloudflare R2 for Media Storage, which are industry standard platform for storing video files with metadata. We could use signed URLs to attach GPS coordinates and visibility settings as object metadata.
