@@ -54,3 +54,26 @@ The mobile application is built as a collection of self-contained UI components 
  - This component stores uploaded video files with GPS coordinates and visibility settings stored as object metadata, serves video playback URLs through time-limited signed tokens.
 
 # Connectors and Data Communicated
+## Mobile App → API Gateway
+ - Protocol: HTTPS/REST + WebSocket
+ - 
+## API Gateway → User Service
+ - Protocol: Internal HTTP (REST)
+## API Gateway → Location Service
+ - Protocol: Internal HTTP + WebSocket
+## API Gateway → Tag Service
+ - Protocol: Internal HTTP (REST)
+## API Gateway → Chat Service
+ - Protocol: WebSocket
+## Chat Service → Location Cache
+ - Protocol: Redis pub/sub
+## Location Service → Location Cache
+ - Protocol: Redis TCP
+## User Service → User Database
+ - Protocol: PostgreSQL TCP wire protocol
+## Chat Service → Message Database
+ - Protocol: PostgreSQL TCP wire protocol
+## API Gateway → Media Storage
+ - Protocol: HTTPS
+## Video UI → Media Storage
+ - Protocol: HTTPS
