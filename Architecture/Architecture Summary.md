@@ -25,13 +25,27 @@ The mobile application is built as a collection of self-contained UI components 
 
 ## Backend
 ### API Gateway
+ - Runs on cloud server.
+ - This component is the front door for all client traffic. It validates JWT tokens on every request, routes REST calls to the correct downstream service, and proxies WebSocket connections to the Chat and Location services. Also issues signed URLs for media upload and download.
 ### User service
+ - Runs on cloud server.
+ - This component manages user accounts: registration, login (issues JWTs), profile reads and writes, block-list management, and anonymous mode toggling, and reads and writes to the User DB.
 ### Location service
+ - Runs on cloud server.
+ - This component receives GPS coordinates from connected clients every few seconds, writes coordinates to the Redis Location Cache with a short TTL, and responds to proximity queries with a filtered list of nearby users within the requested radius.
 ### Tag service
+ - Runs on cloud server.
+ - This component manages the predefined tag library and user-defined custom tags, handles tag search queries, and associates tags with user profiles and supports filtering nearby users by shared tags.
 ### Chat service
+ - Runs on cloud server.
+ - This component maintains persistent WebSocket connections for all active users, delivers messages in real time to recipients, manages group chat rooms using Socket.io rooms, uses Redis pub/sub to fan out messages across multiple server instances, and persists all messages to the Message DB.
 
 ## Database
 ### User database
+ - Runs on cloud server.
 ### Location cache
+ - Runs on cloud server.
 ### Message database
+ - Runs on cloud server.
 ### Media storage
+ - Runs on cloud server.
