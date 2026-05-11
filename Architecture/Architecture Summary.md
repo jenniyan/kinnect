@@ -56,24 +56,34 @@ The mobile application is built as a collection of self-contained UI components 
 # Connectors and Data Communicated
 ## Mobile App → API Gateway
  - Protocol: HTTPS/REST + WebSocket
- - 
+ - Communicated Data: 
 ## API Gateway → User Service
  - Protocol: Internal HTTP (REST)
+ - Communicated Data: 
 ## API Gateway → Location Service
  - Protocol: Internal HTTP + WebSocket
+ - Communicated Data: 
 ## API Gateway → Tag Service
  - Protocol: Internal HTTP (REST)
+ - Communicated Data: 
 ## API Gateway → Chat Service
  - Protocol: WebSocket
+ - Communicated Data: 
 ## Chat Service → Location Cache
  - Protocol: Redis pub/sub
+ - Communicated Data: 
 ## Location Service → Location Cache
  - Protocol: Redis TCP
+ - Communicated Data: 
 ## User Service → User Database
  - Protocol: PostgreSQL TCP wire protocol
+ - Communicated Data: 
 ## Chat Service → Message Database
  - Protocol: PostgreSQL TCP wire protocol
+ - Communicated Data: 
 ## API Gateway → Media Storage
  - Protocol: HTTPS
+ - Communicated Data: 
 ## Video UI → Media Storage
  - Protocol: HTTPS
+ - Communicated Data: 
