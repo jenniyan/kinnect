@@ -9,12 +9,18 @@ The mobile application is built as a collection of self-contained UI components 
 
 ## Components and Key Functionalities
 ## Frontend
-The Frontend should runs on a mobile clinet.
-The frontend should be component-based, consist 4 components:
  - Map UI
+   Runs on Mobile device.
+   
  - Profile UI
+   Runs on Mobile device.
+   
  - Chat UI
+   Runs on Mobile device.
+   
  - Video UI
+   Runs on Mobile device.
+   
 
 ## Backend
 The Backend should runs on a server.
