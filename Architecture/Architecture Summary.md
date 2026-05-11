@@ -11,15 +11,16 @@ The mobile application is built as a collection of self-contained UI components 
 ## Frontend
  - Map UI
    Runs on Mobile device.
-   
+   This component renders the live map using react-native-maps, displays nearby user pins updated in real time via WebSocket, and handles radius filtering UI and triggers navigation to user profiles or chat.
  - Profile UI
    Runs on Mobile device.
-   
+   This component displays and edits the user's bio, tags, avatar, and privacy settings, sends profile updates to the User Service via REST, and renders other users' public profiles on tap.
  - Chat UI
    Runs on Mobile device.
-   
+   This component sends and receives messages in real time over WebSocket, renders individual and group chat threads, and displays read receipts, timestamps, and external chat export links.
  - Video UI
    Runs on Mobile device.
+   This component records video using the device camera via expo-camera, requests a signed upload URL from the API Gateway, then uploads directly to Cloudflare R2, and plays back location-anchored videos on the map.
    
 
 ## Backend
