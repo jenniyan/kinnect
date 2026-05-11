@@ -27,4 +27,11 @@ Trade-offs:
  -  Callback-heavy async code can be difficult to reason about for beginners. The team must consistently use async/await patterns and avoid callback pyramids.
 
 ## SQL
+PostgreSQL queries are written in standard SQL, executed via the pg driver from Node.js. The team will use parameterized queries exclusively to prevent SQL injection.
+Benefit:
+ - SQL is the universal language for relational data, which should be familiar with team members.
+ - PostgreSQL's SQL dialect supports advanced features (window functions, JSON columns, full-text search) that will be useful as the product grows.
 
+Trade-offs:
+  - As the schema evolves, migration scripts must be maintained. Missing a migration can break the production database. The team should use a migration tool from day one.
+  - Complex JOIN queries across multiple tables can become a performance bottleneck at scale. Query performance must be monitored with EXPLAIN ANALYZE and indexes added proactively.
