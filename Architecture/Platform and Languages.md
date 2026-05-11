@@ -1,4 +1,3 @@
-# Platform and Languages
 # Platform
 ## Frontend
  - The Frontend of our application will be build with React Native with Expo. Because it allows us to write one codebase for both iOS and Android, has massive community support, and Expo dramatically simplifies setup. The trade-off is that it's slightly slower than fully native Swift/Kotlin for heavy graphics.
