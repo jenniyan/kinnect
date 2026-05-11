@@ -24,12 +24,11 @@ The mobile application is built as a collection of self-contained UI components 
    
 
 ## Backend
-The Backend should runs on a server.
-The backend should consist 4 components:
- - User service
- - Location service
- - Tag service
- - Chat service
+### API Gateway
+### User service
+### Location service
+### Tag service
+### Chat service
 
 ## Database
 The database should runs on a server.
