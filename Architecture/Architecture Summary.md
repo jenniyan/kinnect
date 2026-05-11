@@ -43,9 +43,13 @@ The mobile application is built as a collection of self-contained UI components 
 ## Database
 ### User database
  - Runs on cloud server.
+ - This component permanently stores user profiles, hashed credentials, tag associations, block lists, and privacy settings.
 ### Location cache
  - Runs on cloud server.
+ - This component stores live GPS coordinates as key-value pairs with a short TTL, expired entries are automatically removed. Also serves as the pub/sub broker for Chat Service scaling.
 ### Message database
  - Runs on cloud server.
+ - This component stores the full history of all chat messages, group membership, and message read status.
 ### Media storage
  - Runs on cloud server.
+ - This component stores uploaded video files with GPS coordinates and visibility settings stored as object metadata, serves video playback URLs through time-limited signed tokens.
