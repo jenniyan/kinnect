@@ -1,3 +1,4 @@
+# Component Functions
 # Frontend Components
 ## Map UI
 This component generally provide functions for UI of real-time geolocation map, including live map and pins on it
