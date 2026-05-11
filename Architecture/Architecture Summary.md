@@ -56,34 +56,34 @@ The mobile application is built as a collection of self-contained UI components 
 # Connectors and Data Communicated
 ## Mobile App → API Gateway
  - Protocol: HTTPS/REST + WebSocket
- - Communicated Data: 
+ - Communicated Data: REST: JSON payloads — login credentials, profile updates, tag queries, signed URL requests. WebSocket: bidirectional event frames — chat messages, GPS coordinates, read receipts.
 ## API Gateway → User Service
  - Protocol: Internal HTTP (REST)
- - Communicated Data: 
+ - Communicated Data: JSON: user registration data, login credentials, profile field updates, block/unblock commands, anonymous mode flag.
 ## API Gateway → Location Service
  - Protocol: Internal HTTP + WebSocket
- - Communicated Data: 
+ - Communicated Data: JSON: {user_id, latitude, longitude, timestamp} on each GPS ping; proximity query {user_id, radius_km} and response {nearby_users[]}.
 ## API Gateway → Tag Service
  - Protocol: Internal HTTP (REST)
- - Communicated Data: 
+ - Communicated Data: JSON: tag search query strings, tag association requests {user_id, tag_id[]}, predefined tag library responses.
 ## API Gateway → Chat Service
  - Protocol: WebSocket
- - Communicated Data: 
+ - Communicated Data: Event frames: {event: 'message', room_id, sender_id, content, timestamp}, {event: 'join_room', room_id}, {event: 'read_receipt', message_id}.
 ## Chat Service → Location Cache
  - Protocol: Redis pub/sub
- - Communicated Data: 
+ - Communicated Data: Serialized message payloads published to channel keyed by room_id; subscriber instances receive and forward to connected WebSocket clients.
 ## Location Service → Location Cache
  - Protocol: Redis TCP
- - Communicated Data: 
+ - Communicated Data: Key: user:{id}:location, Value: {lat, lng, timestamp}, TTL: 30s. GEORADIUSBYMEMBER queries for proximity lookups.
 ## User Service → User Database
  - Protocol: PostgreSQL TCP wire protocol
- - Communicated Data: 
+ - Communicated Data: SQL: INSERT/UPDATE for profile and credentials; SELECT for login lookups; INSERT/DELETE for block-list entries.
 ## Chat Service → Message Database
  - Protocol: PostgreSQL TCP wire protocol
- - Communicated Data: 
+ - Communicated Data: SQL: INSERT for each new message; SELECT for chat history pagination; UPDATE for read-status.
 ## API Gateway → Media Storage
  - Protocol: HTTPS
- - Communicated Data: 
+ - Communicated Data: Signed URL generation request with {user_id, filename, gps_coordinates, visibility}; response is a time-limited pre-signed HTTPS upload URL.
 ## Video UI → Media Storage
  - Protocol: HTTPS
- - Communicated Data: 
+ - Communicated Data: Multipart video upload directly to R2 using the signed URL. No backend server involvement for the binary payload.
