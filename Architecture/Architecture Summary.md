@@ -7,7 +7,7 @@ The backend is divided into three explicit layers: the API Gateway layer (entry 
 - Component-Based Architecture (Mobile App)
 The mobile application is built as a collection of self-contained UI components — Map, Profile, Chat, and Video — each managing its own state and rendering logic. Components communicate through shared navigation state and a global Socket.io client. This style promotes code reuse, independent development of each screen, and isolated testing. Adding a new feature (e.g., a Stories feed) requires creating a new component rather than modifying existing ones.
 
-
+## Components and Key Functionalities
 ## Frontend
 The Frontend should runs on a mobile clinet.
 The frontend should be component-based, consist 4 components:
