@@ -31,9 +31,7 @@ The mobile application is built as a collection of self-contained UI components 
 ### Chat service
 
 ## Database
-The database should runs on a server.
-The database should consist 4 components:
- - User database
- - Location cache
- - Message database
- - Media storage
+### User database
+### Location cache
+### Message database
+### Media storage
