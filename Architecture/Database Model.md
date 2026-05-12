@@ -45,7 +45,7 @@ Stores linked external platform handles for chat transfer (Instagram, WeChat, et
 
 ### `tags`
 
-Library of interest tags — both system-defined and user-created custom tags.
+Library of interest tags (both system-defined and user-created custom tags).
 
 | Column | Type | Constraints | Notes |
 |---|---|---|---|
@@ -59,7 +59,7 @@ Library of interest tags — both system-defined and user-created custom tags.
 
 ### `user_tags`
 
-Join table — associates interest tags with user profiles.
+Join table: associates interest tags with user profiles.
 
 | Column | Type | Constraints | Notes |
 |---|---|---|---|
@@ -122,7 +122,7 @@ Location-anchored video posts uploaded to Cloudflare R2.
 
 ### `video_tags`
 
-Join table — associates interest tags with video posts.
+Join table: associates interest tags with video posts.
 
 | Column | Type | Constraints | Notes |
 |---|---|---|---|
@@ -150,7 +150,7 @@ Represents both direct message conversations and group chats.
 
 ### `room_members`
 
-Join table — tracks which users belong to which rooms.
+Join table: tracks which users belong to which rooms.
 
 | Column | Type | Constraints | Notes |
 |---|---|---|---|
@@ -194,7 +194,7 @@ Per-user read receipts. A separate table (not a column on `messages`) to support
 
 ## Location Cache (Redis)
 
-Redis is not a relational database — there is no schema in the traditional sense. The following documents the key conventions used by the Location Service and Chat Service.
+Redis is not a relational database. There is no schema in the traditional sense. The following documents the key conventions used by the Location Service and Chat Service.
 
 ### GPS coordinates
 
