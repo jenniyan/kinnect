@@ -10,7 +10,7 @@ The mobile application is built as a collection of self-contained UI components 
 ## Frontend
 ### Map UI
  - Runs on Mobile device.
- - This component renders the live map using react-native-maps, displays nearby user pins updated in real time via WebSocket, and handles radius filtering UI and triggers navigation to user profiles or chat. It also provides UI for sending and receiving routing requests, renders turn-by-turn navigation routes, and displays real-time location updates of the destination user during active navigation sessions.
+ - This component renders the live map using react-native-maps, displays nearby user pins updated in real time via WebSocket, and handles radius filtering UI and triggers navigation to user profiles or chat. It also provides UI for sending and receiving routing requests, renders turn-by-turn navigation routes, and displays real-time location updates of the destination user during active navigation sessions. Additionally, it displays location-anchored video markers on the map, shows pop-up previews when users enter video trigger zones, and provides video playback and interaction controls.
 ### Profile UI
  - Runs on Mobile device.
  - This component displays and edits the user's bio, tags, avatar, and privacy settings, sends profile updates to the User Service via REST, and renders other users' public profiles on tap.
@@ -41,6 +41,9 @@ The mobile application is built as a collection of self-contained UI components 
 ### Navigation Service
  - Runs on cloud server.
  - This component manages all GPS routing functionality. It receives routing requests from clients, validates that both users have active location sharing enabled, and generates real-time navigation routes by integrating with Google Maps API and Apple Maps API. It also manages the lifecycle of navigation sessions, continuously updates routes as users move, and handles request acceptance/decline notifications.
+### Video Service
+ - Runs on cloud server.
+ - This component manages all location-triggered video functionality. It stores and retrieves video metadata including GPS coordinates, captions, tags, visibility settings, and like counts. It subscribes to location update events from the Location Service, detects when a user enters the trigger radius of a video, and returns matching video content to clients. It also handles video interactions such as likes and initiates chat requests from video previews.
 
 ## Database
 ### User database
@@ -55,6 +58,9 @@ The mobile application is built as a collection of self-contained UI components 
 ### Media storage
  - Runs on cloud server.
  - This component stores uploaded video files with GPS coordinates and visibility settings stored as object metadata, serves video playback URLs through time-limited signed tokens.
+### Video Metadata Database
+ - Runs on cloud server.
+ - This component stores all metadata for location-triggered videos, including video ID, creator user ID, GPS coordinates, trigger radius, caption, tags, visibility settings, like count, and creation timestamp. It is indexed by geographic coordinates for fast proximity queries.
 
 # Connectors and Data Communicated
 ## Mobile App → API Gateway
@@ -96,3 +102,12 @@ The mobile application is built as a collection of self-contained UI components 
 ## Navigation Service → External Map APIs
  - Protocol: HTTPS
  - Communicated Data: Route requests with start and end coordinates; response containing polyline data, turn-by-turn instructions, and estimated arrival time.
+## API Gateway → Video Service
+ - Protocol: Internal HTTP
+ - Communicated Data: JSON: video metadata uploads, video query requests by location, like/unlike commands, and video deletion requests.
+## Video Service → Location Service
+ - Protocol: Internal HTTP
+ - Communicated Data: Subscription requests for user location events; notifications when users enter specific geographic areas.
+## Video Service → Video Metadata Database
+ - Protocol: PostgreSQL TCP wire protocol
+ - Communicated Data: SQL: INSERT for new video metadata; SELECT for proximity queries and video details; UPDATE for likes and visibility changes; DELETE for removed videos.
