@@ -28,7 +28,7 @@ The mobile application is built as a collection of self-contained UI components 
  - This component is the front door for all client traffic. It validates JWT tokens on every request, routes REST calls to the correct downstream service, and proxies WebSocket connections to the Chat and Location services. Also issues signed URLs for media upload and download.
 ### User service
  - Runs on cloud server.
- - This component manages user accounts: registration, login (issues JWTs), profile reads and writes, block-list management, and anonymous mode toggling, and reads and writes to the User DB.
+ - This component manages user accounts: registration, login (issues JWTs), profile reads and writes, block-list management, and anonymous mode toggling, and reads and writes to the User DB. It also manages user-linked external application accounts, validates external account information, and provides secure access to external contact details during chat transfer requests.
 ### Location service
  - Runs on cloud server.
  - This component receives GPS coordinates from connected clients every few seconds, writes coordinates to the Redis Location Cache with a short TTL, and responds to proximity queries with a filtered list of nearby users within the requested radius.
@@ -37,7 +37,7 @@ The mobile application is built as a collection of self-contained UI components 
  - This component manages the predefined tag library and user-defined custom tags, handles tag search queries, and associates tags with user profiles and supports filtering nearby users by shared tags.
 ### Chat service
  - Runs on cloud server.
- - This component maintains persistent WebSocket connections for all active users, delivers messages in real time to recipients, manages group chat rooms using Socket.io rooms, uses Redis pub/sub to fan out messages across multiple server instances, and persists all messages to the Message DB.
+ - This component maintains persistent WebSocket connections for all active users, delivers messages in real time to recipients, manages group chat rooms using Socket.io rooms, uses Redis pub/sub to fan out messages across multiple server instances, and persists all messages to the Message DB. It also handles external chat transfer requests, sends transfer notifications to recipients, and securely shares external account information only after both parties have confirmed the transfer.
 ### Navigation Service
  - Runs on cloud server.
  - This component manages all GPS routing functionality. It receives routing requests from clients, validates that both users have active location sharing enabled, and generates real-time navigation routes by integrating with Google Maps API and Apple Maps API. It also manages the lifecycle of navigation sessions, continuously updates routes as users move, and handles request acceptance/decline notifications.
@@ -48,7 +48,7 @@ The mobile application is built as a collection of self-contained UI components 
 ## Database
 ### User database
  - Runs on cloud server.
- - This component permanently stores user profiles, hashed credentials, tag associations, block lists, and privacy settings.
+ - This component permanently stores user profiles, hashed credentials, tag associations, block lists, and privacy settings. It also contains an external_accounts table that stores encrypted user credentials and handles for supported external applications.
 ### Location cache
  - Runs on cloud server.
  - This component stores live GPS coordinates as key-value pairs with a short TTL, expired entries are automatically removed. Also serves as the pub/sub broker for Chat Service scaling.
@@ -77,7 +77,7 @@ The mobile application is built as a collection of self-contained UI components 
  - Communicated Data: JSON: tag search query strings, tag association requests {user_id, tag_id[]}, predefined tag library responses.
 ## API Gateway → Chat Service
  - Protocol: WebSocket
- - Communicated Data: Event frames: {event: 'message', room_id, sender_id, content, timestamp}, {event: 'join_room', room_id}, {event: 'read_receipt', message_id}.
+ - Communicated Data: Event frames: {event: 'message', room_id, sender_id, content, timestamp}, {event: 'join_room', room_id}, {event: 'read_receipt', message_id}. {event: 'transfer_request', room_id, sender_id, platform}, {event: 'transfer_accepted', room_id, target_id, external_handle}, {event: 'transfer_declined', room_id, target_id}.
 ## Chat Service → Location Cache
  - Protocol: Redis pub/sub
  - Communicated Data: Serialized message payloads published to channel keyed by room_id; subscriber instances receive and forward to connected WebSocket clients.
