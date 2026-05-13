@@ -10,7 +10,7 @@ The mobile application is built as a collection of self-contained UI components 
 ## Frontend
 ### Map UI
  - Runs on Mobile device.
- - This component renders the live map using react-native-maps, displays nearby user pins updated in real time via WebSocket, and handles radius filtering UI and triggers navigation to user profiles or chat.
+ - This component renders the live map using react-native-maps, displays nearby user pins updated in real time via WebSocket, and handles radius filtering UI and triggers navigation to user profiles or chat. It also provides UI for sending and receiving routing requests, renders turn-by-turn navigation routes, and displays real-time location updates of the destination user during active navigation sessions.
 ### Profile UI
  - Runs on Mobile device.
  - This component displays and edits the user's bio, tags, avatar, and privacy settings, sends profile updates to the User Service via REST, and renders other users' public profiles on tap.
@@ -38,6 +38,9 @@ The mobile application is built as a collection of self-contained UI components 
 ### Chat service
  - Runs on cloud server.
  - This component maintains persistent WebSocket connections for all active users, delivers messages in real time to recipients, manages group chat rooms using Socket.io rooms, uses Redis pub/sub to fan out messages across multiple server instances, and persists all messages to the Message DB.
+### Navigation Service
+ - Runs on cloud server.
+ - This component manages all GPS routing functionality. It receives routing requests from clients, validates that both users have active location sharing enabled, and generates real-time navigation routes by integrating with Google Maps API and Apple Maps API. It also manages the lifecycle of navigation sessions, continuously updates routes as users move, and handles request acceptance/decline notifications.
 
 ## Database
 ### User database
@@ -87,3 +90,9 @@ The mobile application is built as a collection of self-contained UI components 
 ## Video UI → Media Storage
  - Protocol: HTTPS
  - Communicated Data: Multipart video upload directly to R2 using the signed URL. No backend server involvement for the binary payload.
+## API Gateway → Navigation Service
+ - Protocol: Internal HTTP + WebSocket
+ - Communicated Data: JSON: routing requests {requester_id, target_id}, acceptance/decline responses, route cancellation commands; WebSocket: real-time route updates and navigation status events.
+## Navigation Service → External Map APIs
+ - Protocol: HTTPS
+ - Communicated Data: Route requests with start and end coordinates; response containing polyline data, turn-by-turn instructions, and estimated arrival time.
