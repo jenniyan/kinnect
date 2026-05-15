@@ -20,6 +20,9 @@ What features and components are in scope and which are explicitly out of scope?
 
 ## 1.4 Strategy
 
+Unit test:
+Integration test:
+
 | Component | Test types you'll apply | Framework | Why this fit (one sentence) |
 |---|---|---|---|
 | _your frontend stack_ | | | |
@@ -27,18 +30,17 @@ What features and components are in scope and which are explicitly out of scope?
 | Database | | | |
 | Cross-cutting (concurrency / load — if any) | | | |
 
-Unit test:
-Integration test:
-
 ## 1.5 Environment and Assumptions
 
 ## 1.6 Team Roles
 
 | Member | Owns which test categories / components |
 |---|---|
-| | |
-| | |
-| | |
+| Zhengyu Dong | |
+| Niharika Yalla | |
+| Yuxuan Huang | |
+| Xinlei Liang | |
+| Jennifer Yan | |
 
 # Tests Implemented and Report
 ## 2.1 Required Minimums
