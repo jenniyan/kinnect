@@ -1,0 +1,22 @@
+{
+  "name": "kinnect-backend",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "api-gateway",
+    "user-service",
+    "location-service",
+    "tag-service",
+    "chat-service",
+    "navigation-service",
+    "video-service"
+  ],
+  "scripts": {
+    "dev": "concurrently -n gw,user,loc,tag,chat,nav,vid -c cyan,green,yellow,magenta,blue,red,white \"npm run dev -w api-gateway\" \"npm run dev -w user-service\" \"npm run dev -w location-service\" \"npm run dev -w tag-service\" \"npm run dev -w chat-service\" \"npm run dev -w navigation-service\" \"npm run dev -w video-service\"",
+    "db:migrate": "node db/migrate.js",
+    "db:seed": "node db/seed.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
