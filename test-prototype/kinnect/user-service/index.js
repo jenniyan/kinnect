@@ -196,7 +196,11 @@ app.post('/users/batch', async (req, res) => {
        GROUP BY u.id`,
       [user_ids]
     );
-    res.json({ users: result.rows });
+const users = result.rows.map(u => ({
+  ...u,
+  tags: typeof u.tags === 'string' ? JSON.parse(u.tags) : (u.tags || []),
+}));
+res.json({ users });
   } catch (err) {
     console.error('[batch users]', err.message);
     res.status(500).json({ error: 'Batch fetch failed' });
