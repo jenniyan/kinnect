@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Kinnect",
+    "slug": "kinnect",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#F4F0E8"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.kinnect.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Kinnect uses your location to show nearby people with shared interests.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Kinnect uses your location to show nearby people with shared interests.",
+        "NSCameraUsageDescription": "Kinnect uses your camera to record location-anchored videos.",
+        "NSMicrophoneUsageDescription": "Kinnect uses your microphone to record videos."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F4F0E8"
+      },
+      "package": "com.kinnect.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-location",
+      [
+        "expo-camera",
+        { "cameraPermission": "Kinnect uses your camera to record location-anchored videos." }
+      ]
+    ],
+    "scheme": "kinnect",
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
