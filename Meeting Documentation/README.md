@@ -19,6 +19,6 @@ We went over our project plan as a group and then discussed it with our TA after
 ### Attendees: Yuxuan, Zhengyu Dong, Xinlei Liang (Ethan), Jennifer Yan
 The TA went over HW3 (UI Prototyping and Mockup) and HW4 (Testing). The files were created and organized in the repository according to the assignment deliverables. 
 
-# Week 8 Discussion 5/8/26 (In-Person Meeting):
+# Week 8 Discussion 5/22/26 (In-Person Meeting):
 ### Attendees: Yuxuan, Zhengyu Dong, Xinlei Liang (Ethan), Niharika Yalla, Jennifer Yan
-The TA continued to go over HW 3 and 4, we discussed the prototype as a group, and we talked to the TA about our prototype as well. The prototype is still in progress, but it is looking really put together so far, we will continue developing it before HW 4. We also made a rough plan on how to complete hw 3 as a group. 
+The TA continued to go over HW 3 and 4, we discussed the prototype as a group, and we talked to the TA about our prototype as well. The prototype is still in progress, but it is looking really put together so far, we will continue developing it before HW 4. We also made a rough plan on how to complete HW 3 as a group. 
