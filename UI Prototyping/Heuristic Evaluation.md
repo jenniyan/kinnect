@@ -1,7 +1,7 @@
 # Heuristic Evaluation
 ## Visibility of System Status
 ## Match System Words to the Real World
-## User Control and Freedome
+## User Control and Freedom
 ## Consistency and Standards
 ## Error Prevention
 ## Recognition Rather than Recall
