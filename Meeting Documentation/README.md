@@ -9,11 +9,11 @@ We worked on the Prep the Pitch slideshow for our group. We brainstormed our own
 
 # Week 5 Discussion 5/1/26 (In-Person Meeting):
 ### Attendees:  Yuxuan, Zhengyu Dong, Niharika Yalla, Jennifer Yan.
-We went over the Homework 2 assignment as a class.
+We went over the Homework 2 assignment as a class. As a team, we discussed what parts of the HW 2 assignment need to be completed and we made a rough plan. 
 
 # Week 6 Discussion 5/8/26 (In-Person Meeting):
 ### Attendees: Yuxuan, Zhengyu Dong, Xinlei Liang (Ethan), Niharika Yalla, Jennifer Yan
-We went over our plan as a group and then discussed it with our TA. 
+We went over our project plan as a group and then discussed it with our TA afterward.
 
 # Week 7 Discussion 5/15/26 (In-Person Meeting):
 ### Attendees: Yuxuan, Zhengyu Dong, Xinlei Liang (Ethan), Jennifer Yan
@@ -21,4 +21,4 @@ The TA went over HW3 (UI Prototyping and Mockup) and HW4 (Testing). The files we
 
 # Week 8 Discussion 5/8/26 (In-Person Meeting):
 ### Attendees: Yuxuan, Zhengyu Dong, Xinlei Liang (Ethan), Niharika Yalla, Jennifer Yan
-The TA continued to go over HW 3 and 4, we discussed the prototype as a group, and we talked to the TA about our prototype as well. 
+The TA continued to go over HW 3 and 4, we discussed the prototype as a group, and we talked to the TA about our prototype as well. The prototype is still in progress, but it is looking really put together so far, we will continue developing it before HW 4. We also made a rough plan on how to complete hw 3 as a group. 
