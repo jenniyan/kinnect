@@ -14,16 +14,19 @@ let chatSocket    = null;
 
 // ── Gateway socket (location + routing) ──────────────────────
 export async function connectGateway() {
-  if (gatewaySocket?.connected) return gatewaySocket;
+  if (gatewaySocket?.connected) {
+    gatewaySocket.disconnect();
+    gatewaySocket = null;
+  }
   const token = await AsyncStorage.getItem('token');
   gatewaySocket = io(BASE_URL, {
-    auth:            { token },
-    transports:      ['websocket'],
-    reconnection:    true,
+    auth:              { token },
+    transports:        ['websocket'],
+    reconnection:      true,
     reconnectionDelay: 1000,
   });
-  gatewaySocket.on('connect',    () => console.log('[gateway ws] connected'));
-  gatewaySocket.on('disconnect', () => console.log('[gateway ws] disconnected'));
+  gatewaySocket.on('connect',       () => console.log('[gateway ws] connected'));
+  gatewaySocket.on('disconnect',    () => console.log('[gateway ws] disconnected'));
   gatewaySocket.on('connect_error', (e) => console.warn('[gateway ws]', e.message));
   return gatewaySocket;
 }
@@ -37,15 +40,19 @@ export function disconnectGateway() {
 
 // ── Chat socket ───────────────────────────────────────────────
 export async function connectChat(userId) {
-  if (chatSocket?.connected) return chatSocket;
+  // Disconnect stale socket from previous account
+  if (chatSocket?.connected) {
+    chatSocket.disconnect();
+    chatSocket = null;
+  }
   chatSocket = io(CHAT_URL, {
     query:        { user_id: userId },
     transports:   ['websocket'],
     reconnection: true,
     reconnectionDelay: 1000,
   });
-  chatSocket.on('connect',    () => console.log('[chat ws] connected'));
-  chatSocket.on('disconnect', () => console.log('[chat ws] disconnected'));
+  chatSocket.on('connect',       () => console.log('[chat ws] connected'));
+  chatSocket.on('disconnect',    () => console.log('[chat ws] disconnected'));
   chatSocket.on('connect_error', (e) => console.warn('[chat ws]', e.message));
   return chatSocket;
 }

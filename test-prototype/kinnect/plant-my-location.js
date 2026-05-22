@@ -13,7 +13,7 @@ const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 const GEO_KEY = 'geo:users';
 
 const BASE_LAT = 33.64931;
-const BASE_LNG = -117.84638;
+const BASE_LNG = -117.85638;
 
 async function run() {
   const email = process.argv[2];
