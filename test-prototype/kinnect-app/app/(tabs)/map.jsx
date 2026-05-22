@@ -1,26 +1,398 @@
 // app/(tabs)/map.jsx
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Modal } from 'react-native';
+import {
+  View, Text, TouchableOpacity, StyleSheet, Alert,
+  ScrollView, Modal, Pressable, ActivityIndicator, TextInput,
+} from 'react-native';
 import MapView, { Marker, Circle } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-import { getNearbyUsers, updateLocation, createRoutingRequest } from '../../services/api';
+import {
+  getNearbyUsers, updateLocation, createRoutingRequest,
+  createRoom, getUserTags, getUserById,
+} from '../../services/api';
 import { connectGateway, getGatewaySocket } from '../../services/socket';
 import { useAuth } from '../../services/auth';
-import { colors } from '../../constants/theme';
+import { colors, catFor, catColor, tintFor, shadeFor } from '../../constants/theme';
 
+// ── TagWithSubs — matches prototype exactly ────────────────────
+function TagWithSubs({ tag, subtags = [], cat }) {
+  const color = catColor(cat || catFor(tag));
+  return (
+    <View style={[tw.row, { borderColor: color }]}>
+      <View style={[tw.pill, { backgroundColor: color }]}>
+        <Text style={tw.pillText}>{tag}</Text>
+      </View>
+      {subtags.length === 0 ? (
+        <Text style={tw.noSpec}>no specifics</Text>
+      ) : subtags.map(s => (
+        <View key={s} style={[tw.sub, { backgroundColor: tintFor(color) }]}>
+          <Text style={[tw.subText, { color: shadeFor(cat || catFor(tag)) }]}>#{s}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+const tw = StyleSheet.create({
+  row:     { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 5,
+             backgroundColor: '#fff', borderWidth: 1.5, borderRadius: 12,
+             paddingVertical: 6, paddingLeft: 6, paddingRight: 10 },
+  pill:    { borderRadius: 99, paddingHorizontal: 9, paddingVertical: 4 },
+  pillText:{ color: '#fff', fontWeight: '600', fontSize: 12 },
+  noSpec:  { fontSize: 11, color: colors.ink3, fontStyle: 'italic' },
+  sub:     { borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 },
+  subText: { fontSize: 11, fontWeight: '500' },
+});
+
+// ── UserPreviewSheet ───────────────────────────────────────────
+function UserPreviewSheet({ person, onClose, onChat, onRoute, onProfile }) {
+  const [tags,    setTags]    = useState([]);
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    if (!person) return;
+    // Fetch full profile + tags for this user
+    getUserById(person.user_id)
+      .then(r => setProfile(r.data))
+      .catch(() => {});
+    getUserTags(person.user_id)
+      .then(r => setTags(r.data?.tags ?? []))
+      .catch(() => {});
+  }, [person?.user_id]);
+
+  if (!person) return null;
+  const isAnon = person.is_anonymous;
+  const name   = isAnon ? 'Anonymous' : (person.display_name || 'Unknown');
+  const initials = isAnon ? '?' : name.split(' ').map(w => w[0]).join('').slice(0, 2);
+
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={ps.overlay} onPress={onClose}>
+        <Pressable style={ps.sheet} onPress={() => {}}>
+          <View style={ps.grab} />
+
+          {/* Header */}
+          <View style={ps.header}>
+            <View style={[ps.avatar, { backgroundColor: isAnon ? colors.ink3 : colors.green }]}>
+              <Text style={ps.avatarText}>{initials}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={ps.name}>{name}</Text>
+              <Text style={ps.dist}>📍 {person.distance_km?.toFixed(1)} km away</Text>
+            </View>
+          </View>
+
+          {/* Bio */}
+          {!isAnon && (profile?.bio || person.bio) ? (
+            <Text style={ps.bio} numberOfLines={2}>{profile?.bio || person.bio}</Text>
+          ) : null}
+
+          {/* Tags with subtags */}
+          {tags.length > 0 && (
+            <View style={ps.tags}>
+              {tags.slice(0, 4).map(t => (
+                <TagWithSubs key={t.id} tag={t.name} subtags={[]} cat={t.category} />
+              ))}
+            </View>
+          )}
+
+          {/* Actions */}
+          <View style={ps.actions}>
+            <TouchableOpacity style={ps.btnPrimary} onPress={onChat}>
+              <Text style={ps.btnPrimaryText}>Say hi 👋</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={ps.btnSoft} onPress={onRoute}>
+              <Text style={ps.btnSoftText}>Navigate →</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={ps.btnSoft} onPress={onProfile}>
+              <Text style={ps.btnSoftText}>Profile</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+const ps = StyleSheet.create({
+  overlay:      { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(20,32,25,0.3)' },
+  sheet:        { backgroundColor: colors.cream, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+                  padding: 20, paddingBottom: 40 },
+  grab:         { width: 36, height: 4, backgroundColor: colors.line, borderRadius: 99,
+                  alignSelf: 'center', marginBottom: 16 },
+  header:       { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 12 },
+  avatar:       { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
+  avatarText:   { color: '#fff', fontWeight: '800', fontSize: 24 },
+  name:         { fontSize: 24, fontWeight: '800', color: colors.ink },
+  dist:         { fontSize: 13, color: colors.ink3, marginTop: 2 },
+  bio:          { fontSize: 14, color: colors.ink2, lineHeight: 20, marginBottom: 12 },
+  tags:         { gap: 6, marginBottom: 16 },
+  actions:      { flexDirection: 'row', gap: 8, marginTop: 4 },
+  btnPrimary:   { flex: 1, backgroundColor: colors.green, borderRadius: 14,
+                  paddingVertical: 14, alignItems: 'center' },
+  btnPrimaryText:{ color: '#fff', fontWeight: '700', fontSize: 15 },
+  btnSoft:      { backgroundColor: '#fff', borderRadius: 14, paddingVertical: 14,
+                  paddingHorizontal: 16, alignItems: 'center',
+                  borderWidth: 1, borderColor: colors.line },
+  btnSoftText:  { color: colors.ink2, fontWeight: '600', fontSize: 14 },
+});
+
+// ── CreateChatSheet ────────────────────────────────────────────
+function CreateChatSheet({ nearbyUsers, myUserId, onClose, onCreated }) {
+  const [name,     setName]     = useState('');
+  const [selected, setSelected] = useState(new Set());
+  const [creating, setCreating] = useState(false);
+
+  // Derive available interest tags from nearby users
+  const allTags = [...new Set(
+    nearbyUsers.flatMap(u => (u.tags || []).map(t => t.name || t))
+  )];
+
+  const toggle = (userId) => {
+    setSelected(s => {
+      const n = new Set(s);
+      n.has(userId) ? n.delete(userId) : n.add(userId);
+      return n;
+    });
+  };
+
+  const create = async () => {
+    if (selected.size === 0) {
+      Alert.alert('Select people', 'Pick at least one person to chat with.');
+      return;
+    }
+    setCreating(true);
+    try {
+      const memberIds = [...selected, myUserId];
+      const isGroup   = selected.size > 1;
+      const res = await createRoom({
+        type:    isGroup ? 'group' : 'dm',
+        name:    isGroup ? (name.trim() || 'Nearby group') : undefined,
+        members: memberIds,
+      });
+      onCreated(res.data.id || res.data.room?.id);
+    } catch {
+      Alert.alert('Error', 'Could not create chat. Try again.');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={cc.overlay} onPress={onClose}>
+        <Pressable style={cc.sheet} onPress={() => {}}>
+          <View style={cc.grab} />
+          <Text style={cc.title}>Start a chat</Text>
+          <Text style={cc.sub}>Pick people nearby to message. Select more than one for a group.</Text>
+
+          {/* Group name (only if multiple selected) */}
+          {selected.size > 1 && (
+            <TextInput
+              style={cc.nameInput}
+              value={name}
+              onChangeText={setName}
+              placeholder="Group name (optional)"
+              placeholderTextColor={colors.ink3}
+            />
+          )}
+
+          {/* People list */}
+          <ScrollView style={cc.list} showsVerticalScrollIndicator={false}>
+            {nearbyUsers.map(u => {
+              const isSelected = selected.has(u.user_id);
+              const uName = u.is_anonymous ? 'Anonymous' : (u.display_name || 'Unknown');
+              const initial = uName[0].toUpperCase();
+              const uTags = (u.tags || []).map(t => t.name || t);
+              return (
+                <TouchableOpacity
+                  key={u.user_id}
+                  style={[cc.person, isSelected && cc.personSelected]}
+                  onPress={() => toggle(u.user_id)}
+                >
+                  <View style={[cc.personAvatar, {
+                    backgroundColor: isSelected ? colors.green : (u.is_anonymous ? colors.ink3 : colors.peach)
+                  }]}>
+                    <Text style={cc.personAvatarText}>{u.is_anonymous ? '?' : initial}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={cc.personName}>{uName}</Text>
+                    <Text style={cc.personDist}>{u.distance_km?.toFixed(1)} km away</Text>
+                    {uTags.length > 0 && (
+                      <Text style={cc.personTags} numberOfLines={1}>{uTags.join(', ')}</Text>
+                    )}
+                  </View>
+                  <View style={[cc.check, isSelected && cc.checkSelected]}>
+                    {isSelected && <Text style={cc.checkText}>✓</Text>}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+            {nearbyUsers.length === 0 && (
+              <Text style={cc.empty}>No one nearby to chat with.</Text>
+            )}
+          </ScrollView>
+
+          <TouchableOpacity
+            style={[cc.createBtn, (selected.size === 0 || creating) && cc.createBtnDisabled]}
+            onPress={create}
+            disabled={selected.size === 0 || creating}
+          >
+            {creating
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={cc.createBtnText}>
+                  {selected.size === 0
+                    ? 'Select people'
+                    : selected.size === 1
+                    ? 'Start DM'
+                    : `Start group (${selected.size})`}
+                </Text>}
+          </TouchableOpacity>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+const cc = StyleSheet.create({
+  overlay:         { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(20,32,25,0.35)' },
+  sheet:           { backgroundColor: colors.cream, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+                     padding: 20, paddingBottom: 36, maxHeight: '80%' },
+  grab:            { width: 36, height: 4, backgroundColor: colors.line, borderRadius: 99,
+                     alignSelf: 'center', marginBottom: 16 },
+  title:           { fontSize: 24, fontWeight: '800', color: colors.ink, marginBottom: 4 },
+  sub:             { fontSize: 13, color: colors.ink3, marginBottom: 16, lineHeight: 18 },
+  nameInput:       { backgroundColor: '#fff', borderWidth: 1.5, borderColor: colors.green,
+                     borderRadius: 14, padding: 12, fontSize: 15, color: colors.ink, marginBottom: 12 },
+  list:            { maxHeight: 300, marginBottom: 16 },
+  person:          { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12,
+                     backgroundColor: '#fff', borderRadius: 14, marginBottom: 8,
+                     borderWidth: 1.5, borderColor: colors.line },
+  personSelected:  { borderColor: colors.green, backgroundColor: 'rgba(11,110,79,0.04)' },
+  personAvatar:    { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  personAvatarText:{ color: '#fff', fontWeight: '700', fontSize: 16 },
+  personName:      { fontSize: 15, fontWeight: '600', color: colors.ink },
+  personDist:      { fontSize: 11, color: colors.ink3, fontFamily: 'monospace', marginTop: 1 },
+  personTags:      { fontSize: 11, color: colors.ink3, marginTop: 2 },
+  check:           { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5,
+                     borderColor: colors.line, alignItems: 'center', justifyContent: 'center' },
+  checkSelected:   { backgroundColor: colors.green, borderColor: colors.green },
+  checkText:       { color: '#fff', fontWeight: '700', fontSize: 13 },
+  empty:           { textAlign: 'center', color: colors.ink3, fontSize: 14, padding: 24 },
+  createBtn:       { backgroundColor: colors.green, borderRadius: 14, padding: 16, alignItems: 'center' },
+  createBtnDisabled:{ opacity: 0.5 },
+  createBtnText:   { color: '#fff', fontWeight: '700', fontSize: 15 },
+});
+
+// ── NearbySheet — the pull-up bottom panel ─────────────────────
+function NearbySheet({ people, onTap, onTagFilter, activeTag, onCreateChat }) {
+  // Collect all unique tags across nearby people
+  const allTags = [...new Set(
+    people.flatMap(u => (u.tags || []).map(t => t.name || t))
+  )].slice(0, 10);
+
+  return (
+    <View style={ns.sheet}>
+      <View style={ns.grab} />
+
+      {/* Header row */}
+      <View style={ns.headerRow}>
+        <Text style={ns.headline}>{people.length} nearby</Text>
+        <TouchableOpacity style={ns.newChatBtn} onPress={onCreateChat}>
+          <Text style={ns.newChatText}>+ Chat</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Tag filter chips */}
+      {allTags.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={ns.tagScroll}
+          contentContainerStyle={ns.tagRow}
+        >
+          {allTags.map(t => (
+            <TouchableOpacity
+              key={t}
+              style={[ns.tagChip, activeTag === t && ns.tagChipActive]}
+              onPress={() => onTagFilter(t)}
+            >
+              <Text style={[ns.tagChipText, activeTag === t && ns.tagChipTextActive]}>{t}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
+      {/* Person cards */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={ns.cardRow}
+      >
+        {people.length === 0 ? (
+          <Text style={ns.empty}>No one nearby{activeTag ? ` into ${activeTag}` : ''}.</Text>
+        ) : people.map(p => {
+          const isAnon = p.is_anonymous;
+          const name   = isAnon ? 'Anonymous' : (p.display_name || 'Unknown').split(' ')[0];
+          const init   = isAnon ? '?' : name[0].toUpperCase();
+          return (
+            <TouchableOpacity key={p.user_id} style={ns.card} onPress={() => onTap(p)}>
+              <View style={[ns.cardAvatar, { backgroundColor: isAnon ? colors.ink3 : colors.green }]}>
+                <Text style={ns.cardAvatarText}>{init}</Text>
+              </View>
+              <Text style={ns.cardName} numberOfLines={1}>{name}</Text>
+              <Text style={ns.cardDist}>{p.distance_km?.toFixed(1)} km</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+const ns = StyleSheet.create({
+  sheet:            { position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 20,
+                      backgroundColor: '#fff', borderTopLeftRadius: 22, borderTopRightRadius: 22,
+                      paddingBottom: 90,
+                      shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 16, elevation: 8 },
+  grab:             { width: 36, height: 4, backgroundColor: colors.line, borderRadius: 99,
+                      alignSelf: 'center', marginTop: 10, marginBottom: 8 },
+  headerRow:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                      paddingHorizontal: 18, marginBottom: 8 },
+  headline:         { fontSize: 18, fontWeight: '800', color: colors.ink },
+  newChatBtn:       { backgroundColor: colors.green, borderRadius: 99,
+                      paddingHorizontal: 14, paddingVertical: 6 },
+  newChatText:      { color: '#fff', fontWeight: '700', fontSize: 13 },
+  tagScroll:        { marginBottom: 8 },
+  tagRow:           { paddingHorizontal: 18, gap: 6, flexDirection: 'row' },
+  tagChip:          { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 99,
+                      backgroundColor: colors.cream, borderWidth: 1, borderColor: colors.line },
+  tagChipActive:    { backgroundColor: colors.green, borderColor: colors.green },
+  tagChipText:      { fontSize: 12, color: colors.ink2, fontWeight: '500' },
+  tagChipTextActive:{ color: '#fff', fontWeight: '700' },
+  cardRow:          { paddingHorizontal: 18, gap: 10, paddingBottom: 8 },
+  card:             { width: 100, backgroundColor: colors.cream, borderRadius: 14, padding: 10,
+                      alignItems: 'center', borderWidth: 1, borderColor: colors.line },
+  cardAvatar:       { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  cardAvatarText:   { color: '#fff', fontWeight: '700', fontSize: 15 },
+  cardName:         { marginTop: 8, fontSize: 13, fontWeight: '700', color: colors.ink, textAlign: 'center' },
+  cardDist:         { fontSize: 10, color: colors.ink3, fontFamily: 'monospace', marginTop: 2 },
+  empty:            { paddingVertical: 20, paddingHorizontal: 4, color: colors.ink3, fontSize: 13 },
+});
+
+// ── Main screen ────────────────────────────────────────────────
 export default function MapScreen() {
   const { user } = useAuth();
   const router   = useRouter();
   const mapRef   = useRef(null);
 
-  const [myLocation,   setMyLocation]   = useState(null);
-  const [nearbyUsers,  setNearbyUsers]  = useState([]);
-  const [radiusKm,     setRadiusKm]     = useState(user?.radius_km || 2);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [loading,      setLoading]      = useState(true);
+  const [myLocation,    setMyLocation]    = useState(null);
+  const [nearbyUsers,   setNearbyUsers]   = useState([]);
+  const [radiusKm,      setRadiusKm]      = useState(user?.radius_km || 2);
+  const [selectedUser,  setSelectedUser]  = useState(null);
+  const [tagFilter,     setTagFilter]     = useState(null);
+  const [showCreateChat,setShowCreateChat]= useState(false);
+  const [loading,       setLoading]       = useState(true);
+  const [delta, setDelta] = useState(0.02);
 
-  // Start GPS + connect WebSocket on mount
+  // GPS + WebSocket setup
   useEffect(() => {
     let locationSub;
     (async () => {
@@ -31,15 +403,19 @@ export default function MapScreen() {
         return;
       }
 
-      // Get initial position
+      const socket = await connectGateway();
+      socket.on('nearby_user_moved', ({ user_id, lat, lng }) => {
+        setNearbyUsers(prev =>
+          prev.map(u => u.user_id === user_id ? { ...u, lat, lng } : u)
+        );
+      });
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       const { latitude: lat, longitude: lng } = pos.coords;
       setMyLocation({ lat, lng });
       await sendLocation(lat, lng);
-      await fetchNearby(lat, lng);
+      await fetchNearby(lat, lng, radiusKm);
       setLoading(false);
 
-      // Watch position — send update every move
       locationSub = await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.Balanced, distanceInterval: 20 },
         async (pos) => {
@@ -47,20 +423,11 @@ export default function MapScreen() {
           setMyLocation({ lat, lng });
           await sendLocation(lat, lng);
         }
-      );
-
-      // Connect gateway WebSocket for live nearby_user_moved events
-      const socket = await connectGateway();
-      socket.on('nearby_user_moved', ({ user_id, lat, lng }) => {
-        setNearbyUsers(prev =>
-          prev.map(u => u.user_id === user_id ? { ...u, lat, lng } : u)
-        );
-      });
+      );;
     })();
 
-    // Refresh nearby every 15s
     const interval = setInterval(() => {
-      if (myLocation) fetchNearby(myLocation.lat, myLocation.lng);
+      if (myLocation) fetchNearby(myLocation.lat, myLocation.lng, radiusKm);
     }, 15000);
 
     return () => {
@@ -71,15 +438,39 @@ export default function MapScreen() {
   }, []);
 
   const sendLocation = async (lat, lng) => {
-    try { await updateLocation(lat, lng); } catch {}
+  try {
+    const socket = getGatewaySocket();
+    console.log('sendLocation — socket connected:', socket?.connected, 'lat:', lat, 'lng:', lng);
+    if (socket?.connected) {
+      socket.emit('location_update', { lat, lng, timestamp: Date.now() });
+    } else {
+      console.log('socket not connected, falling back to HTTP');
+      await updateLocation(lat, lng);
+    }
+  } catch (err) {
+    console.log('sendLocation error:', err.message);
+  }
+};
+
+  const fetchNearby = useCallback(async (lat, lng, radius) => {
+  try {
+    const res = await getNearbyUsers({ radius_km: radius });
+    console.log('nearby response:', JSON.stringify(res.data));  // ← add this
+    setNearbyUsers(res.data.nearby_users || []);
+  } catch (err) {
+    console.log('nearby error:', err.message, err.response?.data);  // ← and this
+  }
+}, []);
+
+  const handleRadiusChange = (r) => {
+    setRadiusKm(r);
+    if (myLocation) fetchNearby(myLocation.lat, myLocation.lng, r);
   };
 
-  const fetchNearby = useCallback(async (lat, lng) => {
-    try {
-      const res = await getNearbyUsers({ radius_km: radiusKm });
-      setNearbyUsers(res.data.nearby_users || []);
-    } catch {}
-  }, [radiusKm]);
+  // Filtered list for the nearby sheet
+  const filteredUsers = tagFilter
+    ? nearbyUsers.filter(u => (u.tags || []).some(t => (t.name || t) === tagFilter))
+    : nearbyUsers;
 
   const startChat = async (person) => {
     setSelectedUser(null);
@@ -90,7 +481,6 @@ export default function MapScreen() {
     setSelectedUser(null);
     try {
       const res = await createRoutingRequest(person.user_id);
-      // Notify via gateway WebSocket
       getGatewaySocket()?.emit('routing_request_notify', {
         target_user_id:     person.user_id,
         routing_request_id: res.data.id,
@@ -101,10 +491,29 @@ export default function MapScreen() {
     }
   };
 
+  const zoom = (direction) => {
+  const factor = direction === 'in' ? 0.5 : 2;
+  const newDelta = Math.min(Math.max(delta * factor, 0.002), 0.5);
+  setDelta(newDelta);
+  mapRef.current?.animateToRegion({
+    latitude:       myLocation.lat,
+    longitude:      myLocation.lng,
+    latitudeDelta:  newDelta,
+    longitudeDelta: newDelta,
+  }, 250);
+};
+
+  const handleChatCreated = (roomId) => {
+    setShowCreateChat(false);
+    router.push(`/chat/${roomId}`);
+  };
+
   if (!myLocation) {
     return (
       <View style={s.loading}>
-        <Text style={s.loadingText}>{loading ? 'Getting your location…' : 'Location unavailable'}</Text>
+        {loading
+          ? <ActivityIndicator color={colors.green} size="large" />
+          : <Text style={s.loadingText}>Location unavailable</Text>}
       </View>
     );
   }
@@ -112,18 +521,18 @@ export default function MapScreen() {
   return (
     <View style={s.container}>
       <MapView
-        ref={mapRef}
-        style={s.map}
-        initialRegion={{
-          latitude:        myLocation.lat,
-          longitude:       myLocation.lng,
-          latitudeDelta:   0.02,
-          longitudeDelta:  0.02,
-        }}
-        showsUserLocation
-        showsMyLocationButton={false}
-      >
-        {/* Radius circle */}
+  ref={mapRef}
+  style={s.map}
+  initialRegion={{
+    latitude:       myLocation.lat,
+    longitude:      myLocation.lng,
+    latitudeDelta:  delta,
+    longitudeDelta: delta,
+  }}
+  onRegionChangeComplete={(r) => setDelta(r.latitudeDelta)}  // ← track current zoom
+  showsUserLocation
+  showsMyLocationButton={false}
+>
         <Circle
           center={{ latitude: myLocation.lat, longitude: myLocation.lng }}
           radius={radiusKm * 1000}
@@ -131,8 +540,6 @@ export default function MapScreen() {
           strokeColor="rgba(11,110,79,0.35)"
           strokeWidth={1.5}
         />
-
-        {/* Nearby user pins */}
         {nearbyUsers.map(person => (
           <Marker
             key={person.user_id}
@@ -148,131 +555,130 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      {/* Nearby count pill */}
-      <View style={s.pill}>
-        <Text style={s.pillText}>{nearbyUsers.length} nearby · {radiusKm.toFixed(1)} km</Text>
-      </View>
-
-      {/* Radius slider (simple buttons) */}
-      <View style={s.radiusBar}>
-        <Text style={s.radiusLabel}>Radius</Text>
-        {[0.5, 1, 2, 3].map(r => (
-          <TouchableOpacity key={r}
-            style={[s.radiusBtn, radiusKm === r && s.radiusBtnActive]}
-            onPress={() => { setRadiusKm(r); fetchNearby(myLocation.lat, myLocation.lng); }}>
-            <Text style={[s.radiusBtnText, radiusKm === r && { color: '#fff' }]}>{r} km</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Nearby users sheet */}
-      {nearbyUsers.length > 0 && (
-        <ScrollView horizontal style={s.nearbySheet} contentContainerStyle={s.nearbyRow} showsHorizontalScrollIndicator={false}>
-          {nearbyUsers.map(p => (
-            <TouchableOpacity key={p.user_id} style={s.nearbyCard} onPress={() => setSelectedUser(p)}>
-              <View style={[s.nearbyAvatar, { backgroundColor: p.is_anonymous ? colors.ink3 : colors.green }]}>
-                <Text style={s.nearbyAvatarText}>
-                  {p.is_anonymous ? '?' : (p.display_name || '?').charAt(0)}
-                </Text>
-              </View>
-              <Text style={s.nearbyName} numberOfLines={1}>{p.is_anonymous ? 'Anon' : (p.display_name || 'Unknown').split(' ')[0]}</Text>
-              <Text style={s.nearbyDist}>{p.distance_km?.toFixed(1)} km</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
-
-      {/* User detail modal */}
-      <Modal visible={!!selectedUser} transparent animationType="slide" onRequestClose={() => setSelectedUser(null)}>
-        <TouchableOpacity style={s.modalOverlay} activeOpacity={1} onPress={() => setSelectedUser(null)}>
-          {selectedUser && (
-            <View style={s.sheet}>
-              <View style={s.grab} />
-              <View style={s.sheetHeader}>
-                <View style={[s.sheetAvatar, { backgroundColor: selectedUser.is_anonymous ? colors.ink3 : colors.green }]}>
-                  <Text style={s.sheetAvatarText}>
-                    {selectedUser.is_anonymous ? '?' : (selectedUser.display_name || '?').charAt(0)}
-                  </Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.sheetName}>{selectedUser.is_anonymous ? 'Anonymous' : (selectedUser.display_name || 'Unknown')}</Text>
-                  <Text style={s.sheetDist}>📍 {selectedUser.distance_km?.toFixed(1)} km away</Text>
-                </View>
-              </View>
-
-              {selectedUser.tags?.length > 0 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-                  {selectedUser.tags.map(t => (
-                    <View key={t.name} style={s.tagChip}>
-                      <Text style={s.tagChipText}>{t.name}</Text>
-                    </View>
-                  ))}
-                </ScrollView>
-              )}
-
-              <View style={s.sheetActions}>
-                <TouchableOpacity style={s.btnPrimary} onPress={() => startChat(selectedUser)}>
-                  <Text style={s.btnPrimaryText}>Say hi 👋</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={s.btnSoft} onPress={() => requestRoute(selectedUser)}>
-                  <Text style={s.btnSoftText}>Navigate →</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={s.btnSoft}
-                  onPress={() => { setSelectedUser(null); router.push(`/profile/${selectedUser.user_id}`); }}>
-                  <Text style={s.btnSoftText}>Profile</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+      {/* Top bar — filter pill + ghost button */}
+      <View style={s.topBar}>
+        <TouchableOpacity style={s.topPill}>
+          <Text style={s.topPillIcon}>⚡</Text>
+          {tagFilter ? (
+            <>
+              <Text style={s.topPillLabel}>filter: </Text>
+              <Text style={s.topPillValue}>{tagFilter}</Text>
+              <TouchableOpacity onPress={() => setTagFilter(null)} style={s.clearFilter}>
+                <Text style={s.clearFilterText}>✕</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <Text style={s.topPillPlaceholder}>Filter by interest…</Text>
           )}
         </TouchableOpacity>
-      </Modal>
+        <TouchableOpacity
+          style={[s.ghostBtn, user?.is_anonymous && { backgroundColor: colors.peach }]}
+          onPress={() => router.push('/settings/privacy')}
+        >
+          <Text style={s.ghostBtnText}>👻</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Radius selector */}
+      {/* Zoom controls */}
+<View style={s.zoomBtns}>
+  <TouchableOpacity style={s.zoomBtn} onPress={() => zoom('in')}>
+    <Text style={s.zoomBtnText}>+</Text>
+  </TouchableOpacity>
+  <View style={s.zoomDivider} />
+  <TouchableOpacity style={s.zoomBtn} onPress={() => zoom('out')}>
+    <Text style={s.zoomBtnText}>−</Text>
+  </TouchableOpacity>
+</View>
+      <View style={s.radiusBar}>
+        <Text style={s.radiusLabel}>RADIUS</Text>
+        <Text style={s.radiusValue}>{radiusKm.toFixed(1)} km · {filteredUsers.length} people</Text>
+        <View style={s.radiusBtns}>
+          {[0.5, 1, 2, 3].map(r => (
+            <TouchableOpacity
+              key={r}
+              style={[s.radiusBtn, radiusKm === r && s.radiusBtnActive]}
+              onPress={() => handleRadiusChange(r)}
+            >
+              <Text style={[s.radiusBtnText, radiusKm === r && { color: '#fff' }]}>{r}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Nearby bottom sheet */}
+      <NearbySheet
+        people={filteredUsers}
+        onTap={setSelectedUser}
+        onTagFilter={(t) => setTagFilter(t === tagFilter ? null : t)}
+        activeTag={tagFilter}
+        onCreateChat={() => setShowCreateChat(true)}
+      />
+
+      {/* User preview sheet */}
+      <UserPreviewSheet
+        person={selectedUser}
+        onClose={() => setSelectedUser(null)}
+        onChat={() => startChat(selectedUser)}
+        onRoute={() => requestRoute(selectedUser)}
+        onProfile={() => { setSelectedUser(null); router.push(`/profile/${selectedUser.user_id}`); }}
+      />
+
+      {/* Create chat sheet */}
+      {showCreateChat && (
+        <CreateChatSheet
+          nearbyUsers={nearbyUsers}
+          myUserId={user?.id}
+          onClose={() => setShowCreateChat(false)}
+          onCreated={handleChatCreated}
+        />
+      )}
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  container:       { flex: 1 },
-  map:             { flex: 1 },
-  loading:         { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.cream },
-  loadingText:     { color: colors.ink3, fontSize: 16 },
-  pin:             { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
-                     borderWidth: 2.5, borderColor: '#fff', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 },
-  pinText:         { color: '#fff', fontWeight: '800', fontSize: 13 },
-  pill:            { position: 'absolute', top: 60, alignSelf: 'center',
-                     backgroundColor: 'rgba(255,255,255,0.92)', borderRadius: 99, paddingHorizontal: 16, paddingVertical: 8,
-                     shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8, elevation: 4 },
-  pillText:        { fontFamily: 'monospace', fontSize: 12, color: colors.ink2 },
-  radiusBar:       { position: 'absolute', bottom: 180, left: 16, right: 16,
-                     backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 16, padding: 12,
-                     flexDirection: 'row', alignItems: 'center', gap: 8,
-                     shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8, elevation: 4 },
-  radiusLabel:     { fontSize: 12, fontWeight: '700', color: colors.ink3, textTransform: 'uppercase', letterSpacing: 1 },
-  radiusBtn:       { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99, backgroundColor: colors.cream, borderWidth: 1, borderColor: colors.line },
-  radiusBtnActive: { backgroundColor: colors.green, borderColor: colors.green },
-  radiusBtnText:   { fontSize: 13, fontWeight: '600', color: colors.ink2 },
-  nearbySheet:     { position: 'absolute', bottom: 90, left: 0, right: 0 },
-  nearbyRow:       { paddingHorizontal: 16, gap: 10, paddingVertical: 4 },
-  nearbyCard:      { width: 90, backgroundColor: colors.cream, borderRadius: 14, padding: 10, alignItems: 'center',
-                     borderWidth: 1, borderColor: colors.line },
-  nearbyAvatar:    { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  nearbyAvatarText:{ color: '#fff', fontWeight: '700', fontSize: 14 },
-  nearbyName:      { marginTop: 6, fontSize: 12, fontWeight: '700', color: colors.ink },
-  nearbyDist:      { fontSize: 10, color: colors.ink3, fontFamily: 'monospace' },
-  modalOverlay:    { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(20,32,25,0.3)' },
-  sheet:           { backgroundColor: colors.cream, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40 },
-  grab:            { width: 36, height: 4, backgroundColor: colors.line, borderRadius: 99, alignSelf: 'center', marginBottom: 16 },
-  sheetHeader:     { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 },
-  sheetAvatar:     { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center' },
-  sheetAvatarText: { color: '#fff', fontWeight: '800', fontSize: 22 },
-  sheetName:       { fontSize: 22, fontWeight: '800', color: colors.ink },
-  sheetDist:       { fontSize: 13, color: colors.ink3, marginTop: 2 },
-  tagChip:         { backgroundColor: '#fff', borderRadius: 99, paddingHorizontal: 12, paddingVertical: 6,
-                     marginRight: 6, borderWidth: 1, borderColor: colors.line },
-  tagChipText:     { fontSize: 13, color: colors.ink2 },
-  sheetActions:    { flexDirection: 'row', gap: 8 },
-  btnPrimary:      { flex: 1, backgroundColor: colors.green, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
-  btnPrimaryText:  { color: '#fff', fontWeight: '700', fontSize: 15 },
-  btnSoft:         { backgroundColor: '#fff', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 16,
-                     alignItems: 'center', borderWidth: 1, borderColor: colors.line },
-  btnSoftText:     { color: colors.ink2, fontWeight: '600', fontSize: 14 },
+  container:         { flex: 1 },
+  map:               { flex: 1 },
+  loading:           { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.cream },
+  loadingText:       { color: colors.ink3, fontSize: 16 },
+  pin:               { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
+                       borderWidth: 2.5, borderColor: '#fff',
+                       shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 },
+  pinText:           { color: '#fff', fontWeight: '800', fontSize: 13 },
+  // Top bar
+  topBar:            { position: 'absolute', top: 56, left: 12, right: 12, zIndex: 10,
+                       flexDirection: 'row', gap: 8, alignItems: 'center' },
+  topPill:           { flex: 1, height: 44, backgroundColor: 'rgba(255,255,255,0.92)',
+                       borderRadius: 22, borderWidth: 1, borderColor: 'rgba(20,32,25,0.06)',
+                       flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, gap: 6,
+                       shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
+  topPillIcon:       { fontSize: 15 },
+  topPillPlaceholder:{ fontSize: 14, color: colors.ink3 },
+  topPillLabel:      { fontSize: 14, color: colors.ink3 },
+  topPillValue:      { fontSize: 14, fontWeight: '700', color: colors.ink },
+  clearFilter:       { marginLeft: 'auto', padding: 4 },
+  clearFilterText:   { color: colors.ink3, fontSize: 14 },
+  ghostBtn:          { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.92)',
+                       alignItems: 'center', justifyContent: 'center',
+                       shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
+  ghostBtnText:      { fontSize: 20 },
+  // Radius bar
+  radiusBar:         { position: 'absolute', bottom: 220, left: 16, right: 16, zIndex: 12,
+                       backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 16, padding: 12,
+                       shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8, elevation: 4 },
+  radiusLabel:       { fontSize: 11, fontWeight: '700', color: colors.ink3,
+                       fontFamily: 'monospace', letterSpacing: 1 },
+  radiusValue:       { fontSize: 13, color: colors.ink, fontFamily: 'monospace', marginBottom: 8 },
+  radiusBtns:        { flexDirection: 'row', gap: 6 },
+  radiusBtn:         { flex: 1, paddingVertical: 7, borderRadius: 99, backgroundColor: colors.cream,
+                       borderWidth: 1, borderColor: colors.line, alignItems: 'center' },
+  radiusBtnActive:   { backgroundColor: colors.green, borderColor: colors.green },
+  radiusBtnText:     { fontSize: 13, fontWeight: '600', color: colors.ink2 },
+  zoomBtns:    { position: 'absolute', right: 16, bottom: 330, zIndex: 12,
+               backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 14,
+               shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8, elevation: 4 },
+zoomBtn:     { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+zoomBtnText: { fontSize: 24, fontWeight: '300', color: colors.ink, lineHeight: 28 },
+zoomDivider: { height: 1, backgroundColor: colors.line, marginHorizontal: 8 },
 });
