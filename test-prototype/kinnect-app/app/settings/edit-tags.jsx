@@ -6,7 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../services/auth';
-import { getUserTags, addUserTags, removeUserTag, resolveTags } from '../../services/api';
+import { getUserTags, addUserTags, removeUserTag, resolveTags, createTag } from '../../services/api';
 import {
   colors, TAG_LIBRARY, SUBTAG_LIBRARY,
   catFor, catColor, tintFor, shadeFor,

@@ -77,10 +77,9 @@ app.get('/tags/:id', async (req, res) => {
 // Body: { name, category }
 app.post('/tags', async (req, res) => {
   const userId = req.query.user_id;
-  const { name, category } = req.body;
+  const { name, category, parent_tag_id } = req.body;
   if (!name || !category) return res.status(400).json({ error: 'name and category required' });
 
-  // Validate category
   const CATEGORIES = ['Sports', 'Arts', 'Outdoors', 'Food', 'Social'];
   if (!CATEGORIES.includes(category)) {
     return res.status(400).json({ error: `category must be one of: ${CATEGORIES.join(', ')}` });
@@ -88,12 +87,12 @@ app.post('/tags', async (req, res) => {
 
   try {
     const result = await db.query(
-      `INSERT INTO tags (name, category, is_custom, created_by)
-       VALUES ($1, $2, true, $3)
-       ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
-       RETURNING id, name, category, is_custom`,
-      [name.trim(), category, userId]
-    );
+  `INSERT INTO tags (name, category, is_custom, created_by, parent_tag_id)
+   VALUES ($1, $2, true, $3, $4)
+   ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+   RETURNING id, name, category, is_custom, parent_tag_id`,
+  [name.trim(), category, userId, parent_tag_id || null]
+);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('[create tag]', err.message);

@@ -199,6 +199,7 @@ io.on('connection', (socket) => {
 
   // ── location_update: client sends GPS → relay to location-service ──
   socket.on('location_update', async ({ lat, lng, timestamp }) => {
+    console.log('[ws location_update] from:', userId, 'lat:', lat, 'lng:', lng);
     try {
       await axios.post(`${SVC.location}/location/update`, {
         user_id: userId, lat, lng, timestamp: timestamp || Date.now(),

@@ -32,7 +32,8 @@ app.get('/health', (_req, res) => res.json({ ok: true, service: 'location-servic
 // Body: { user_id, lat, lng, timestamp? }
 // Called internally from API Gateway when it relays a WebSocket location_update event.
 app.post('/location/update', async (req, res) => {
-  const { user_id, lat, lng } = req.body;
+  const user_id = req.body.user_id || req.query.user_id;  // ← read from either
+  const { lat, lng } = req.body;
   if (!user_id || lat == null || lng == null) {
     return res.status(400).json({ error: 'user_id, lat, lng required' });
   }
@@ -57,23 +58,13 @@ app.post('/location/update', async (req, res) => {
   }
 });
 
-// ── Get a single user's last known location ───────────────────
-// GET /location/:userId
-app.get('/location/:userId', async (req, res) => {
-  try {
-    const raw = await redis.get(`user:${req.params.userId}:location`);
-    if (!raw) return res.status(404).json({ error: 'Location not available' });
-    res.json(JSON.parse(raw));
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to get location' });
-  }
-});
 
 // ── Nearby users query ────────────────────────────────────────
 // GET /location/nearby?user_id=X&radius_km=2&tag=Pickleball
 // Returns users within radius, filtered for blocks and location_visible.
 app.get('/location/nearby', async (req, res) => {
-  const { user_id, radius_km = 2, tag } = req.query;
+  const user_id = req.query.user_id || req.body.user_id;
+  const { radius_km = 2, tag } = req.query;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
 
   try {
@@ -152,6 +143,19 @@ app.get('/location/nearby', async (req, res) => {
     res.status(500).json({ error: 'Nearby query failed' });
   }
 });
+
+// ── Get a single user's last known location ───────────────────
+// GET /location/:userId
+app.get('/location/:userId', async (req, res) => {
+  try {
+    const raw = await redis.get(`user:${req.params.userId}:location`);
+    if (!raw) return res.status(404).json({ error: 'Location not available' });
+    res.json(JSON.parse(raw));
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get location' });
+  }
+});
+
 
 // ── Remove user from location index (logout / hide) ───────────
 // DELETE /location/:userId
