@@ -18,6 +18,12 @@ The UI might miss for confirmation on some key actions
  - The 'Export to Instagram DM / Discord' links in the group detail sheet appear as one-tap actions with no confirmation dialog. Exporting a chat to an external platform is irreversible and should require an explicit confirm step.
 
 ## Recognition Rather than Recall
+The UI have excellent use of persistent visual cues
+### Advantage
+ - Interest tags are always shown as coloured pills on the profile and map filter bar — users never need to remember what they selected.
+ - The map filter bar ('Pickleball · Coffee · Photography…') shows active filters inline, so users can see at a glance what is affecting their results.
+ - The tag customisation sheet surfaces 'SUGGESTED' subtags before the free-text input — reduces cognitive load by making the common choices visible.
+
 ## Accelerators
 ## Minimalist Design
 ## Help Users Recognize/Recover From Errors
