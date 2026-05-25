@@ -12,7 +12,7 @@ The UI have strong visual visual and interaction consistency
 ## Error Prevention
 The UI might miss for confirmation on some key actions
 ### Advantage
- - The tag customisation sheet requires an explicit 'Save (1)' tap — changes are not auto-committed, which correctly prevents accidental tag additions.
+ - The tag customisation sheet requires an explicit 'Save' tap, means changes are not auto-committed, which correctly prevents accidental tag additions.
 ### Issue
  - Tapping a user's pin on the map likely initiates contact or reveals their location — there is no confirmation step shown. For privacy-sensitive social apps, accidental disclosure of intent (e.g. opening a chat) should be preventable.
  - The 'Export to Instagram DM / Discord' links in the group detail sheet appear as one-tap actions with no confirmation dialog. Exporting a chat to an external platform is irreversible and should require an explicit confirm step.
