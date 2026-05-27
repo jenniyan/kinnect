@@ -1,5 +1,13 @@
 # Heuristic Evaluation
 ## Visibility of System Status
+The UI have excellent real-time feedback throughout
+### Advantage
+ - Map screen shows live count '6 nearby' and radius (2.0 km) updating in real time — users always know what the system is doing.
+ - Chat list shows 'SOCKET.IO · 7 ONLINE' in the header — connection state is surfaced directly to the user.
+ - Video screen shows '♦ PLAYING · 135 CLIP FROM QUAIL HILL' as a live status bar — playback state is always visible.
+### Issue
+ - Registration form has no loading indicator after tapping 'Continue →'. The API call (INSERT INTO users) could take 1–2 seconds — the user receives no feedback during this time and may tap again.
+
 ## Match System Words to the Real World
 ## User Control and Freedom
 ## Consistency and Standards
