@@ -9,7 +9,14 @@ The UI have excellent real-time feedback throughout
  - Registration form has no loading indicator after tapping 'Continue →'. The API call (INSERT INTO users) could take 1–2 seconds — the user receives no feedback during this time and may tap again.
 
 ## Match System Words to the Real World
+The UI have natural language and metaphors
+### Advantage
+ - 'Who's around right now?' uses conversational, social language rather than technical jargon — matches how users think about the problem.
+ - Interest tags use everyday names (Pickleball, Coffee, Hiking) not system identifiers — the tag picker feels like selecting stickers, not filling a database field.
+ - The map pin metaphor is universally understood. Pinning users to a physical map directly mirrors the real-world concept of knowing who's nearby.
+
 ## User Control and Freedom
+
 ## Consistency and Standards
 The UI have strong visual visual and interaction consistency
 ### Advantage
