@@ -37,7 +37,7 @@ const SVC = {
 const redisSub = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
 // ── JWT middleware ────────────────────────────────────────────
 function requireAuth(req, res, next) {
@@ -106,7 +106,8 @@ app.use(requireAuth);
 
 // ── User / Profile ────────────────────────────────────────────
 app.get('/users/me',            (req, res) => proxyReq(req, res, `${SVC.user}/users/me`));
-app.patch('/users/me/profile',  (req, res) => proxyReq(req, res, `${SVC.user}/users/me/profile`));
+app.patch("/users/me/profile",  (req, res) => proxyReq(req, res, `${SVC.user}/users/me/profile`));
+app.post("/users/me/avatar",   (req, res) => proxyReq(req, res, `${SVC.user}/users/me/avatar`));
 app.get('/users/nearby',        (req, res) => proxyReq(req, res, `${SVC.location}/location/nearby`)); // ← moved up
 app.get('/users/:id',           (req, res) => proxyReq(req, res, `${SVC.user}/users/${req.params.id}`));
 

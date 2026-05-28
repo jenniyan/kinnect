@@ -1,6 +1,6 @@
 // app/(tabs)/profile.jsx
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { updateProfile, getUserTags } from '../../services/api';
 import { useAuth } from '../../services/auth';
@@ -19,20 +19,16 @@ export default function Profile() {
   }, [user?.id]);
 
   const toggleAnonymous = async (val) => {
-    try {
-      await updateProfile({ is_anonymous: val });
-      await refreshUser();
-    } catch {}
+    try { await updateProfile({ is_anonymous: val }); await refreshUser(); } catch {}
   };
 
   const toggleVisible = async (val) => {
-    try {
-      await updateProfile({ location_visible: val });
-      await refreshUser();
-    } catch {}
+    try { await updateProfile({ location_visible: val }); await refreshUser(); } catch {}
   };
 
   if (!user) return null;
+
+  const initials = (user.display_name || '?').charAt(0).toUpperCase();
 
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
@@ -45,9 +41,18 @@ export default function Profile() {
           </TouchableOpacity>
         </View>
         <View style={s.heroRow}>
-          <View style={s.avatar}>
-            <Text style={s.avatarText}>{(user.display_name || '?').charAt(0).toUpperCase()}</Text>
-          </View>
+          <TouchableOpacity onPress={() => router.push('/settings/edit-profile')} style={s.avatarWrap}>
+            {user.avatar_url ? (
+              <Image source={{ uri: user.avatar_url }} style={s.avatarImg} />
+            ) : (
+              <View style={s.avatar}>
+                <Text style={s.avatarText}>{initials}</Text>
+              </View>
+            )}
+            <View style={s.cameraBadge}>
+              <Text style={{ fontSize: 10 }}>📷</Text>
+            </View>
+          </TouchableOpacity>
           <View>
             <Text style={s.displayName}>{user.display_name || 'Anonymous'}</Text>
             <Text style={s.userId}>user · {user.id?.slice(0, 8)}</Text>
@@ -147,9 +152,14 @@ const s = StyleSheet.create({
   gearBtn:       { padding: 6 },
   gearText:      { fontSize: 20 },
   heroRow:       { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 20 },
+  avatarWrap:    { position: 'relative' },
   avatar:        { width: 72, height: 72, borderRadius: 36, backgroundColor: 'rgba(255,255,255,0.2)',
                    alignItems: 'center', justifyContent: 'center' },
+  avatarImg:     { width: 72, height: 72, borderRadius: 36, borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)' },
   avatarText:    { fontSize: 30, fontWeight: '800', color: '#fff' },
+  cameraBadge:   { position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderRadius: 10,
+                   backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center',
+                   borderWidth: 1.5, borderColor: colors.line },
   displayName:   { fontSize: 28, fontWeight: '800', color: '#fff' },
   userId:        { fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
   statusCard:    { margin: 16, marginTop: -40, backgroundColor: '#fff', borderRadius: 18, padding: 14,

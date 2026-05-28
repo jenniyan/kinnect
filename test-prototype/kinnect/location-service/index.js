@@ -134,6 +134,7 @@ app.get('/location/nearby', async (req, res) => {
         lat:          parseFloat(c.lng_lat[1]),
         lng:          parseFloat(c.lng_lat[0]),
         tags:         profile.tags || [],
+        avatar_url:   profile.avatar_url || null,
       });
     }
 

@@ -1,7 +1,4 @@
 // user-service/index.js
-// Handles: registration, login, profile CRUD, block list, external accounts
-// Internal HTTP only — sits behind the API Gateway
-
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 
 const express  = require('express');
@@ -17,33 +14,23 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_in_production';
 const db = new Pool({ connectionString: process.env.USER_DB_URL });
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // increased for base64 avatar
 
 // ── Health ────────────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ ok: true, service: 'user-service' }));
 
 // ── Auth: Register ────────────────────────────────────────────
-// POST /auth/register
-// Body: { email, password, display_name?, phone?, bio?, is_anonymous? }
 app.post('/auth/register', async (req, res) => {
   const { email, password, display_name, phone, bio, is_anonymous } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ error: 'email and password are required' });
-  }
-  if (password.length < 8) {
-    return res.status(400).json({ error: 'Password must be at least 8 characters' });
-  }
+  if (!email || !password) return res.status(400).json({ error: 'email and password are required' });
+  if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
 
   try {
-    // Check for duplicates
     const dup = await db.query(
       'SELECT id FROM users WHERE email = $1 OR (phone IS NOT NULL AND phone = $2)',
       [email, phone || null]
     );
-    if (dup.rows.length > 0) {
-      return res.status(409).json({ error: 'Email or phone already registered' });
-    }
+    if (dup.rows.length > 0) return res.status(409).json({ error: 'Email or phone already registered' });
 
     const password_hash = await bcrypt.hash(password, 12);
     const result = await db.query(
@@ -54,7 +41,6 @@ app.post('/auth/register', async (req, res) => {
     );
     const user = result.rows[0];
     const access_token = jwt.sign({ sub: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-
     res.status(201).json({ access_token, user_id: user.id, user });
   } catch (err) {
     console.error('[register]', err.message);
@@ -63,13 +49,9 @@ app.post('/auth/register', async (req, res) => {
 });
 
 // ── Auth: Login ───────────────────────────────────────────────
-// POST /auth/login
-// Body: { email OR phone, password }
 app.post('/auth/login', async (req, res) => {
   const { email, phone, password } = req.body;
-  if (!password || (!email && !phone)) {
-    return res.status(400).json({ error: 'Provide (email or phone) and password' });
-  }
+  if (!password || (!email && !phone)) return res.status(400).json({ error: 'Provide (email or phone) and password' });
 
   try {
     const result = await db.query(
@@ -92,12 +74,11 @@ app.post('/auth/login', async (req, res) => {
 });
 
 // ── Profile: Get own ──────────────────────────────────────────
-// GET /users/me  (called by gateway after auth)
 app.get('/users/me', async (req, res) => {
   const userId = req.query.user_id;
   try {
     const result = await db.query(
-      `SELECT u.id, u.email, u.phone, u.display_name, u.bio,
+      `SELECT u.id, u.email, u.phone, u.display_name, u.bio, u.avatar_url,
               u.is_anonymous, u.location_visible, u.radius_km, u.created_at, u.updated_at,
               COALESCE(
                 json_agg(DISTINCT jsonb_build_object('platform', ea.platform, 'handle', ea.handle))
@@ -118,11 +99,9 @@ app.get('/users/me', async (req, res) => {
 });
 
 // ── Profile: Update own ───────────────────────────────────────
-// PATCH /users/me/profile
-// Body: { bio?, display_name?, is_anonymous?, location_visible?, radius_km? }
 app.patch('/users/me/profile', async (req, res) => {
   const userId = req.query.user_id;
-  const { bio, display_name, is_anonymous, location_visible, radius_km } = req.body;
+  const { bio, display_name, is_anonymous, location_visible, radius_km, phone } = req.body;
 
   try {
     const result = await db.query(
@@ -131,10 +110,12 @@ app.patch('/users/me/profile', async (req, res) => {
          display_name     = COALESCE($3, display_name),
          is_anonymous     = COALESCE($4, is_anonymous),
          location_visible = COALESCE($5, location_visible),
-         radius_km        = COALESCE($6, radius_km)
+         radius_km        = COALESCE($6, radius_km),
+         phone            = COALESCE($7, phone),
+         updated_at       = now()
        WHERE id = $1
        RETURNING id, updated_at`,
-      [userId, bio, display_name, is_anonymous, location_visible, radius_km]
+      [userId, bio, display_name, is_anonymous, location_visible, radius_km, phone]
     );
     if (!result.rows[0]) return res.status(404).json({ error: 'User not found' });
     res.json(result.rows[0]);
@@ -144,12 +125,42 @@ app.patch('/users/me/profile', async (req, res) => {
   }
 });
 
+// ── Avatar: Upload (base64) ───────────────────────────────────
+// POST /users/me/avatar
+// Body: { avatar_data: "data:image/jpeg;base64,..." }
+app.post('/users/me/avatar', async (req, res) => {
+  const userId = req.query.user_id;
+  const { avatar_data } = req.body;
+
+  if (!avatar_data) return res.status(400).json({ error: 'avatar_data required' });
+
+  // Basic validation — must be a data URI
+  if (!avatar_data.startsWith('data:image/')) {
+    return res.status(400).json({ error: 'avatar_data must be a base64 image data URI' });
+  }
+
+  // Limit to ~2MB of base64 (~1.5MB actual image)
+  if (avatar_data.length > 2_800_000) {
+    return res.status(413).json({ error: 'Image too large. Please choose a smaller photo.' });
+  }
+
+  try {
+    await db.query(
+      'UPDATE users SET avatar_url = $2, updated_at = now() WHERE id = $1',
+      [userId, avatar_data]
+    );
+    res.json({ avatar_url: avatar_data });
+  } catch (err) {
+    console.error('[post avatar]', err.message);
+    res.status(500).json({ error: 'Avatar upload failed' });
+  }
+});
+
 // ── Profile: Get by ID (public) ───────────────────────────────
-// GET /users/:id
 app.get('/users/:id', async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT u.id,
+      `SELECT u.id, u.avatar_url,
          CASE WHEN u.is_anonymous THEN NULL ELSE u.display_name END AS display_name,
          CASE WHEN u.is_anonymous THEN NULL ELSE u.bio END AS bio,
          u.is_anonymous, u.location_visible, u.radius_km,
@@ -172,17 +183,13 @@ app.get('/users/:id', async (req, res) => {
   }
 });
 
-// ── Batch profile fetch (used by location service) ────────────
-// POST /users/batch
-// Body: { user_ids: string[] }
+// ── Batch profile fetch ───────────────────────────────────────
 app.post('/users/batch', async (req, res) => {
   const { user_ids } = req.body;
-  if (!Array.isArray(user_ids) || user_ids.length === 0) {
-    return res.json({ users: [] });
-  }
+  if (!Array.isArray(user_ids) || user_ids.length === 0) return res.json({ users: [] });
   try {
     const result = await db.query(
-      `SELECT u.id,
+      `SELECT u.id, u.avatar_url,
          CASE WHEN u.is_anonymous THEN NULL ELSE u.display_name END AS display_name,
          u.is_anonymous, u.location_visible,
          COALESCE(
@@ -196,24 +203,22 @@ app.post('/users/batch', async (req, res) => {
        GROUP BY u.id`,
       [user_ids]
     );
-const users = result.rows.map(u => ({
-  ...u,
-  tags: typeof u.tags === 'string' ? JSON.parse(u.tags) : (u.tags || []),
-}));
-res.json({ users });
+    const users = result.rows.map(u => ({
+      ...u,
+      tags: typeof u.tags === 'string' ? JSON.parse(u.tags) : (u.tags || []),
+    }));
+    res.json({ users });
   } catch (err) {
     console.error('[batch users]', err.message);
     res.status(500).json({ error: 'Batch fetch failed' });
   }
 });
 
-// ── Block list: Block a user ──────────────────────────────────
-// POST /users/me/blocks/:targetId
+// ── Block list ────────────────────────────────────────────────
 app.post('/users/me/blocks/:targetId', async (req, res) => {
   const blockerId = req.query.user_id;
   const blockedId = req.params.targetId;
   if (blockerId === blockedId) return res.status(400).json({ error: 'Cannot block yourself' });
-
   try {
     await db.query(
       'INSERT INTO blocks (blocker_id, blocked_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
@@ -226,62 +231,42 @@ app.post('/users/me/blocks/:targetId', async (req, res) => {
   }
 });
 
-// ── Block list: Unblock ───────────────────────────────────────
-// DELETE /users/me/blocks/:targetId
 app.delete('/users/me/blocks/:targetId', async (req, res) => {
   const blockerId = req.query.user_id;
   try {
-    await db.query(
-      'DELETE FROM blocks WHERE blocker_id = $1 AND blocked_id = $2',
-      [blockerId, req.params.targetId]
-    );
+    await db.query('DELETE FROM blocks WHERE blocker_id = $1 AND blocked_id = $2', [blockerId, req.params.targetId]);
     res.json({ unblocked: true });
   } catch (err) {
-    console.error('[unblock]', err.message);
     res.status(500).json({ error: 'Unblock failed' });
   }
 });
 
-// ── Block list: Get all blocked IDs ──────────────────────────
-// GET /users/me/blocks
 app.get('/users/me/blocks', async (req, res) => {
   const userId = req.query.user_id;
   try {
-    const result = await db.query(
-      'SELECT blocked_id, created_at FROM blocks WHERE blocker_id = $1',
-      [userId]
-    );
+    const result = await db.query('SELECT blocked_id, created_at FROM blocks WHERE blocker_id = $1', [userId]);
     res.json({ blocked_users: result.rows });
   } catch (err) {
-    console.error('[get blocks]', err.message);
     res.status(500).json({ error: 'Failed to fetch blocks' });
   }
 });
 
-// ── Check if A is blocked by B (internal use) ─────────────────
-// GET /users/is-blocked?blocker_id=X&blocked_id=Y
 app.get('/users/is-blocked', async (req, res) => {
   const { blocker_id, blocked_id } = req.query;
   try {
-    const result = await db.query(
-      'SELECT 1 FROM blocks WHERE blocker_id = $1 AND blocked_id = $2',
-      [blocker_id, blocked_id]
-    );
+    const result = await db.query('SELECT 1 FROM blocks WHERE blocker_id = $1 AND blocked_id = $2', [blocker_id, blocked_id]);
     res.json({ is_blocked: result.rows.length > 0 });
   } catch (err) {
     res.status(500).json({ error: 'Check failed' });
   }
 });
 
-// ── External accounts: Upsert ─────────────────────────────────
-// PUT /users/me/external/:platform
-// Body: { handle }
+// ── External accounts ─────────────────────────────────────────
 app.put('/users/me/external/:platform', async (req, res) => {
   const userId = req.query.user_id;
   const { platform } = req.params;
   const { handle } = req.body;
   if (!handle) return res.status(400).json({ error: 'handle is required' });
-
   try {
     await db.query(
       `INSERT INTO external_accounts (user_id, platform, handle)
@@ -296,44 +281,30 @@ app.put('/users/me/external/:platform', async (req, res) => {
   }
 });
 
-// ── External accounts: Delete ─────────────────────────────────
-// DELETE /users/me/external/:platform
 app.delete('/users/me/external/:platform', async (req, res) => {
   const userId = req.query.user_id;
   try {
-    await db.query(
-      'DELETE FROM external_accounts WHERE user_id = $1 AND platform = $2',
-      [userId, req.params.platform]
-    );
+    await db.query('DELETE FROM external_accounts WHERE user_id = $1 AND platform = $2', [userId, req.params.platform]);
     res.json({ deleted: true });
   } catch (err) {
     res.status(500).json({ error: 'Delete failed' });
   }
 });
 
-// ── External accounts: Get one user's handles (for chat transfer) ─
-// GET /users/:id/external
 app.get('/users/:id/external', async (req, res) => {
   try {
-    const result = await db.query(
-      'SELECT platform, handle FROM external_accounts WHERE user_id = $1',
-      [req.params.id]
-    );
+    const result = await db.query('SELECT platform, handle FROM external_accounts WHERE user_id = $1', [req.params.id]);
     res.json({ accounts: result.rows });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch external accounts' });
   }
 });
 
-// ── Tags: Add to user profile ─────────────────────────────────
-// POST /users/me/tags
-// Body: { tag_ids: string[] }
+// ── Tags ──────────────────────────────────────────────────────
 app.post('/users/me/tags', async (req, res) => {
   const userId = req.query.user_id;
   const { tag_ids } = req.body;
-  if (!Array.isArray(tag_ids) || tag_ids.length === 0) {
-    return res.status(400).json({ error: 'tag_ids array required' });
-  }
+  if (!Array.isArray(tag_ids) || tag_ids.length === 0) return res.status(400).json({ error: 'tag_ids array required' });
   try {
     const values = tag_ids.map((tid, i) => `($1, $${i + 2})`).join(', ');
     await db.query(
@@ -347,33 +318,24 @@ app.post('/users/me/tags', async (req, res) => {
   }
 });
 
-// ── Tags: Remove from profile ──────────────────────────────────
-// DELETE /users/me/tags/:tagId
 app.delete('/users/me/tags/:tagId', async (req, res) => {
   const userId = req.query.user_id;
   try {
-    await db.query(
-      'DELETE FROM user_tags WHERE user_id = $1 AND tag_id = $2',
-      [userId, req.params.tagId]
-    );
+    await db.query('DELETE FROM user_tags WHERE user_id = $1 AND tag_id = $2', [userId, req.params.tagId]);
     res.json({ removed: true });
   } catch (err) {
     res.status(500).json({ error: 'Remove tag failed' });
   }
 });
 
-// ── Routing requests: Create ──────────────────────────────────
-// POST /routing-requests
-// Body: { target_id }
+// ── Routing requests ──────────────────────────────────────────
 app.post('/routing-requests', async (req, res) => {
   const requesterId = req.query.user_id;
   const { target_id } = req.body;
   if (!target_id) return res.status(400).json({ error: 'target_id required' });
-
   try {
     const result = await db.query(
-      `INSERT INTO routing_requests (requester_id, target_id)
-       VALUES ($1, $2) RETURNING *`,
+      `INSERT INTO routing_requests (requester_id, target_id) VALUES ($1, $2) RETURNING *`,
       [requesterId, target_id]
     );
     res.status(201).json(result.rows[0]);
@@ -383,22 +345,15 @@ app.post('/routing-requests', async (req, res) => {
   }
 });
 
-// ── Routing requests: Update status ───────────────────────────
-// PATCH /routing-requests/:id
-// Body: { status: 'accepted'|'declined'|'cancelled' }
 app.patch('/routing-requests/:id', async (req, res) => {
   const userId = req.query.user_id;
   const { status } = req.body;
   const valid = ['accepted', 'declined', 'cancelled'];
-  if (!valid.includes(status)) {
-    return res.status(400).json({ error: `status must be one of: ${valid.join(', ')}` });
-  }
+  if (!valid.includes(status)) return res.status(400).json({ error: `status must be one of: ${valid.join(', ')}` });
   try {
     const result = await db.query(
-      `UPDATE routing_requests
-       SET status = $2, resolved_at = now()
-       WHERE id = $1 AND (target_id = $3 OR requester_id = $3)
-       RETURNING *`,
+      `UPDATE routing_requests SET status = $2, resolved_at = now()
+       WHERE id = $1 AND (target_id = $3 OR requester_id = $3) RETURNING *`,
       [req.params.id, status, userId]
     );
     if (!result.rows[0]) return res.status(404).json({ error: 'Request not found or unauthorized' });
@@ -408,6 +363,4 @@ app.patch('/routing-requests/:id', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`✓ user-service listening on :${PORT}`);
-});
+app.listen(PORT, () => console.log(`✓ user-service listening on :${PORT}`));

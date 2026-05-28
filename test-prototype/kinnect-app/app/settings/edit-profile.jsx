@@ -1,29 +1,30 @@
 // app/settings/edit-profile.jsx
 import {
   View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet,
-  Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
+  Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { useAuth } from '../../services/auth';
-import { updateProfile, getUserTags } from '../../services/api';
+import { updateProfile, getUserTags, uploadAvatar } from '../../services/api';
 import { colors, catFor, catColor, tintFor, shadeFor } from '../../constants/theme';
-import { useEffect } from 'react';
 
-// ── TagWithSubs — read-only display of a tag + its subtag chips ──
+// ── TagWithSubs ────────────────────────────────────────────────
 function TagWithSubs({ tag, subtags = [], cat }) {
   const color = catColor(cat);
   return (
-    <View style={[t.row, { borderColor: color }]}>
-      <View style={[t.pill, { backgroundColor: color }]}>
-        <Text style={t.pillText}>{tag}</Text>
+    <View style={[tg.row, { borderColor: color }]}>
+      <View style={[tg.pill, { backgroundColor: color }]}>
+        <Text style={tg.pillText}>{tag}</Text>
       </View>
       {subtags.length === 0 ? (
-        <Text style={t.noSpecifics}>no specifics</Text>
+        <Text style={tg.noSpecifics}>no specifics</Text>
       ) : (
         subtags.map(s => (
-          <View key={s} style={[t.subChip, { backgroundColor: tintFor(color) }]}>
-            <Text style={[t.subChipText, { color: shadeFor(cat) }]}>#{s}</Text>
+          <View key={s} style={[tg.subChip, { backgroundColor: tintFor(color) }]}>
+            <Text style={[tg.subChipText, { color: shadeFor(cat) }]}>#{s}</Text>
           </View>
         ))
       )}
@@ -31,15 +32,15 @@ function TagWithSubs({ tag, subtags = [], cat }) {
   );
 }
 
-const t = StyleSheet.create({
-  row:          { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6,
-                  backgroundColor: '#fff', borderWidth: 1.5, borderRadius: 14,
-                  paddingVertical: 6, paddingLeft: 6, paddingRight: 10 },
-  pill:         { borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
-  pillText:     { color: '#fff', fontWeight: '600', fontSize: 13 },
-  noSpecifics:  { fontSize: 12, color: colors.ink3, fontStyle: 'italic' },
-  subChip:      { borderRadius: 99, paddingHorizontal: 9, paddingVertical: 4 },
-  subChipText:  { fontSize: 12, fontWeight: '500' },
+const tg = StyleSheet.create({
+  row:         { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6,
+                 backgroundColor: '#fff', borderWidth: 1.5, borderRadius: 14,
+                 paddingVertical: 6, paddingLeft: 6, paddingRight: 10 },
+  pill:        { borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
+  pillText:    { color: '#fff', fontWeight: '600', fontSize: 13 },
+  noSpecifics: { fontSize: 12, color: colors.ink3, fontStyle: 'italic' },
+  subChip:     { borderRadius: 99, paddingHorizontal: 9, paddingVertical: 4 },
+  subChipText: { fontSize: 12, fontWeight: '500' },
 });
 
 // ── Field ──────────────────────────────────────────────────────
@@ -80,8 +81,10 @@ export default function EditProfile() {
   const [displayName, setDisplayName] = useState(user?.display_name || '');
   const [bio,         setBio]         = useState(user?.bio          || '');
   const [phone,       setPhone]       = useState(user?.phone        || '');
-  const [myTags,      setMyTags]      = useState([]);   // [{ name, subtags }]
+  const [myTags,      setMyTags]      = useState([]);
   const [saving,      setSaving]      = useState(false);
+  const [photoUri,    setPhotoUri]    = useState(user?.avatar_url   || null);
+  const [newPhotoUri, setNewPhotoUri] = useState(null); // local uri of newly picked photo
 
   useEffect(() => {
     (async () => {
@@ -92,6 +95,24 @@ export default function EditProfile() {
     })();
   }, []);
 
+  const pickPhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow photo library access to change your profile photo.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.6, // compress to keep base64 small
+    });
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setNewPhotoUri(result.assets[0].uri);
+      setPhotoUri(result.assets[0].uri); // show preview immediately
+    }
+  };
+
   const save = async () => {
     if (!displayName.trim()) {
       Alert.alert('Display name required', 'Please enter a name to show on your profile.');
@@ -99,14 +120,27 @@ export default function EditProfile() {
     }
     setSaving(true);
     try {
+      // 1. Upload avatar if a new one was picked
+      if (newPhotoUri) {
+        const base64 = await FileSystem.readAsStringAsync(newPhotoUri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        const mimeType = newPhotoUri.endsWith('.png') ? 'image/png' : 'image/jpeg';
+        const avatarData = `data:${mimeType};base64,${base64}`;
+        await uploadAvatar(avatarData);
+      }
+
+      // 2. Save profile fields
       await updateProfile({
         display_name: displayName.trim(),
-        bio:   bio.trim(),
-        phone: phone.trim() || null,
+        bio:          bio.trim(),
+        phone:        phone.trim() || null,
       });
+
       await refreshUser();
       router.back();
     } catch (err) {
+      console.log('[save profile error]', err.message, err.response?.data);
       Alert.alert('Error', err.response?.data?.error || 'Could not save profile. Try again.');
     } finally {
       setSaving(false);
@@ -119,7 +153,6 @@ export default function EditProfile() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView style={s.screen} contentContainerStyle={s.container} keyboardShouldPersistTaps="handled">
 
-        {/* Header row */}
         <View style={s.headerRow}>
           <TouchableOpacity onPress={() => router.back()}>
             <Text style={s.backText}>← Back</Text>
@@ -137,17 +170,25 @@ export default function EditProfile() {
 
         <Text style={s.headline}>Edit profile</Text>
 
-        {/* Avatar + photo button */}
+        {/* Avatar */}
         <View style={s.avatarRow}>
-          <View style={s.avatar}>
-            <Text style={s.avatarText}>{initials}</Text>
-          </View>
-          <TouchableOpacity style={s.photoBtn}>
+          <TouchableOpacity onPress={pickPhoto} style={s.avatarWrap}>
+            {photoUri ? (
+              <Image source={{ uri: photoUri }} style={s.avatarImg} />
+            ) : (
+              <View style={s.avatar}>
+                <Text style={s.avatarText}>{initials}</Text>
+              </View>
+            )}
+            <View style={s.cameraBadge}>
+              <Text style={{ fontSize: 12 }}>📷</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.photoBtn} onPress={pickPhoto}>
             <Text style={s.photoBtnText}>📷  Change photo</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Fields */}
         <Field
           label="Display name"
           value={displayName}
@@ -156,13 +197,12 @@ export default function EditProfile() {
           maxLength={50}
         />
 
-        {/* Bio with char count */}
         <View style={s.bioWrap}>
           <Text style={f.label}>Bio</Text>
           <TextInput
             style={s.bioInput}
             value={bio}
-            onChangeText={t => t.length <= 280 && setBio(t)}
+            onChangeText={v => v.length <= 280 && setBio(v)}
             placeholder="A little about yourself…"
             placeholderTextColor={colors.ink3}
             multiline
@@ -188,7 +228,6 @@ export default function EditProfile() {
         />
         <Text style={s.readOnlyHint}>Email cannot be changed</Text>
 
-        {/* Interests — read-only display, edit via edit-tags */}
         {myTags.length > 0 && (
           <View style={s.interestsSection}>
             <View style={s.sectionHead}>
@@ -216,34 +255,31 @@ export default function EditProfile() {
 }
 
 const s = StyleSheet.create({
-  screen:          { flex: 1, backgroundColor: colors.cream },
-  container:       { padding: 20, paddingTop: 60, paddingBottom: 60 },
-  headerRow:       { flexDirection: 'row', justifyContent: 'space-between',
-                     alignItems: 'center', marginBottom: 16 },
-  backText:        { color: colors.ink2, fontSize: 16 },
-  saveBtn:         { backgroundColor: colors.green, borderRadius: 99,
-                     paddingHorizontal: 18, paddingVertical: 8, minWidth: 64, alignItems: 'center' },
-  saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText:     { color: '#fff', fontWeight: '700', fontSize: 14 },
-  headline:        { fontSize: 36, fontWeight: '800', color: colors.ink, marginBottom: 20 },
-  avatarRow:       { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 22 },
-  avatar:          { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.green,
-                     alignItems: 'center', justifyContent: 'center' },
-  avatarText:      { fontSize: 30, fontWeight: '800', color: '#fff' },
-  photoBtn:        { backgroundColor: colors.cream2, borderWidth: 1, borderColor: colors.line,
-                     borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
-  photoBtnText:    { fontSize: 14, fontWeight: '600', color: colors.ink2 },
-  bioWrap:         { marginBottom: 14 },
-  bioInput:        { backgroundColor: '#fff', borderWidth: 1.5, borderColor: colors.line,
-                     borderRadius: 14, padding: 14, fontSize: 15, color: colors.ink, minHeight: 96 },
-  bioCount:        { textAlign: 'right', fontSize: 11, color: colors.ink3,
-                     fontFamily: 'monospace', marginTop: 4 },
-  readOnlyHint:    { fontSize: 11, color: colors.ink3, marginTop: -10, marginBottom: 14, paddingLeft: 2 },
-  interestsSection:{ marginTop: 8 },
-  sectionHead:     { flexDirection: 'row', justifyContent: 'space-between',
-                     alignItems: 'baseline', marginBottom: 10 },
-  sectionLabel:    { fontFamily: 'monospace', fontSize: 11, textTransform: 'uppercase',
-                     letterSpacing: 1.2, color: colors.ink3, fontWeight: '700' },
-  sectionAction:   { fontSize: 13, fontWeight: '600', color: colors.green },
-  tagList:         { gap: 6, flexDirection: 'column' },
+  screen:           { flex: 1, backgroundColor: colors.cream },
+  container:        { padding: 20, paddingTop: 60, paddingBottom: 60 },
+  headerRow:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  backText:         { color: colors.ink2, fontSize: 16 },
+  saveBtn:          { backgroundColor: colors.green, borderRadius: 99, paddingHorizontal: 18, paddingVertical: 8, minWidth: 64, alignItems: 'center' },
+  saveBtnDisabled:  { opacity: 0.6 },
+  saveBtnText:      { color: '#fff', fontWeight: '700', fontSize: 14 },
+  headline:         { fontSize: 36, fontWeight: '800', color: colors.ink, marginBottom: 20 },
+  avatarRow:        { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 22 },
+  avatarWrap:       { position: 'relative' },
+  avatar:           { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.green, alignItems: 'center', justifyContent: 'center' },
+  avatarImg:        { width: 72, height: 72, borderRadius: 36 },
+  avatarText:       { fontSize: 30, fontWeight: '800', color: '#fff' },
+  cameraBadge:      { position: 'absolute', bottom: 0, right: 0, width: 22, height: 22, borderRadius: 11,
+                      backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center',
+                      borderWidth: 1.5, borderColor: colors.line },
+  photoBtn:         { backgroundColor: colors.cream2, borderWidth: 1, borderColor: colors.line, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
+  photoBtnText:     { fontSize: 14, fontWeight: '600', color: colors.ink2 },
+  bioWrap:          { marginBottom: 14 },
+  bioInput:         { backgroundColor: '#fff', borderWidth: 1.5, borderColor: colors.line, borderRadius: 14, padding: 14, fontSize: 15, color: colors.ink, minHeight: 96 },
+  bioCount:         { textAlign: 'right', fontSize: 11, color: colors.ink3, fontFamily: 'monospace', marginTop: 4 },
+  readOnlyHint:     { fontSize: 11, color: colors.ink3, marginTop: -10, marginBottom: 14, paddingLeft: 2 },
+  interestsSection: { marginTop: 8 },
+  sectionHead:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 },
+  sectionLabel:     { fontFamily: 'monospace', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.2, color: colors.ink3, fontWeight: '700' },
+  sectionAction:    { fontSize: 13, fontWeight: '600', color: colors.green },
+  tagList:          { gap: 6, flexDirection: 'column' },
 });

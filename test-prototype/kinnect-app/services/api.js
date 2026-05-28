@@ -1,18 +1,11 @@
 // services/api.js
-// All calls go through the API Gateway at PORT 3000.
-// Change BASE_URL to your server's IP when testing on a real device.
-
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// ⚠️  Change this to your machine's local IP when running on a real device
-// e.g. 'http://192.168.1.42:3000'
-// For Expo Go on simulator, localhost works fine.
 export const BASE_URL = 'http://localhost:3000';
 
 const api = axios.create({ baseURL: BASE_URL });
 
-// Attach JWT to every request automatically
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -27,6 +20,9 @@ export const login    = (body) => api.post('/auth/login', body);
 export const getMe           = ()     => api.get('/users/me');
 export const updateProfile   = (body) => api.patch('/users/me/profile', body);
 export const getUserById     = (id)   => api.get(`/users/${id}`);
+
+// ── Avatar ────────────────────────────────────────────────────
+export const uploadAvatar    = (avatarData) => api.post('/users/me/avatar', { avatar_data: avatarData });
 
 // ── Tags ──────────────────────────────────────────────────────
 export const getTags         = (params) => api.get('/tags', { params });

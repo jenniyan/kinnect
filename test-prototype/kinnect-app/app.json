@@ -16,7 +16,8 @@
         "NSLocationWhenInUseUsageDescription": "Kinnect uses your location to show nearby people with shared interests.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Kinnect uses your location to show nearby people with shared interests.",
         "NSCameraUsageDescription": "Kinnect uses your camera to record location-anchored videos.",
-        "NSMicrophoneUsageDescription": "Kinnect uses your microphone to record videos."
+        "NSMicrophoneUsageDescription": "Kinnect uses your microphone to record videos.",
+        "NSPhotoLibraryUsageDescription": "Kinnect uses your photo library to set your profile photo."
       }
     },
     "android": {
@@ -28,7 +29,9 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "CAMERA",
-        "RECORD_AUDIO"
+        "RECORD_AUDIO",
+        "READ_MEDIA_IMAGES",
+        "READ_EXTERNAL_STORAGE"
       ]
     },
     "plugins": [
@@ -37,6 +40,10 @@
       [
         "expo-camera",
         { "cameraPermission": "Kinnect uses your camera to record location-anchored videos." }
+      ],
+      [
+        "expo-image-picker",
+        { "photosPermission": "Kinnect uses your photo library to set your profile photo." }
       ]
     ],
     "scheme": "kinnect",
