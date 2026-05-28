@@ -1,5 +1,4 @@
 // app/(tabs)/videos.jsx
-// TikTok-style full-screen vertical feed of nearby location-anchored videos.
 import { useCallback, useRef, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
@@ -14,8 +13,7 @@ import { colors } from '../../constants/theme';
 const { width, height } = Dimensions.get('window');
 const ITEM_HEIGHT = height;
 
-// ── VideoCard — full screen card ──────────────────────────────
-function VideoCard({ video, isActive, onLike, onNavigate, onProfile }) {
+function VideoCard({ video, isActive, onNavigate, onProfile }) {
   const [posterName, setPosterName] = useState(null);
   const [liked,      setLiked]      = useState(video.liked_by_me);
   const [likes,      setLikes]      = useState(video.like_count || 0);
@@ -42,7 +40,6 @@ function VideoCard({ video, isActive, onLike, onNavigate, onProfile }) {
   const initials = (posterName || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   const dist     = video.distance_m != null ? `${(video.distance_m / 1000).toFixed(1)} km` : '';
 
-  // Gradient tint based on video ID for visual variety in dev mode
   const tints = [
     ['#F4A26C', '#E5786A', '#0B6E4F'],
     ['#1d2a32', '#F2C94C', '#0B6E4F'],
@@ -53,32 +50,15 @@ function VideoCard({ video, isActive, onLike, onNavigate, onProfile }) {
 
   return (
     <View style={vc.container}>
-      {/* Background — gradient placeholder (replace with <Video> when adding expo-av) */}
+      {/* Background */}
       <View style={[vc.bg, { backgroundColor: tint[2] }]}>
         <View style={[vc.bgTop,    { backgroundColor: tint[0] }]} />
         <View style={[vc.bgMiddle, { backgroundColor: tint[1] }]} />
-        {/* Grid lines like prototype */}
         <View style={vc.gridH1} /><View style={vc.gridH2} />
         <View style={vc.gridV1} /><View style={vc.gridV2} />
-        {/* Play indicator */}
         <View style={vc.playIcon}>
           <Text style={{ fontSize: 48, opacity: 0.5 }}>▶</Text>
         </View>
-      </View>
-
-      {/* Top bar */}
-      <View style={vc.topBar}>
-        <View style={vc.segmentPill}>
-          <View style={vc.segmentActive}><Text style={vc.segmentActiveText}>Nearby</Text></View>
-          <TouchableOpacity><Text style={vc.segmentInactive}>Following</Text></TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Progress dots (decorative) */}
-      <View style={vc.progressRow}>
-        {[0,1,2].map(i => (
-          <View key={i} style={[vc.progressDot, i === 0 && vc.progressDotActive]} />
-        ))}
       </View>
 
       {/* Right actions */}
@@ -108,9 +88,7 @@ function VideoCard({ video, isActive, onLike, onNavigate, onProfile }) {
             <Text style={vc.posterDist}>📍 {dist}{dist ? ' · ' : ''}{video.lat?.toFixed(3)}, {video.lng?.toFixed(3)}</Text>
           </View>
         </TouchableOpacity>
-        {video.caption ? (
-          <Text style={vc.caption}>{video.caption}</Text>
-        ) : null}
+        {video.caption ? <Text style={vc.caption}>{video.caption}</Text> : null}
         {video.tags?.length > 0 && (
           <View style={vc.tagRow}>
             {video.tags.map(t => (
@@ -126,48 +104,34 @@ function VideoCard({ video, isActive, onLike, onNavigate, onProfile }) {
 }
 
 const vc = StyleSheet.create({
-  container:          { width, height: ITEM_HEIGHT, backgroundColor: '#000' },
-  bg:                 { ...StyleSheet.absoluteFillObject },
-  bgTop:              { position: 'absolute', top: 0, left: 0, right: 0, height: '50%', opacity: 0.85 },
-  bgMiddle:           { position: 'absolute', top: '30%', left: 0, right: 0, height: '40%', opacity: 0.6 },
-  gridH1:             { position: 'absolute', top: '33%', left: 0, right: 0, height: 1, backgroundColor: '#fff', opacity: 0.12 },
-  gridH2:             { position: 'absolute', top: '66%', left: 0, right: 0, height: 1, backgroundColor: '#fff', opacity: 0.12 },
-  gridV1:             { position: 'absolute', top: 0, bottom: 0, left: '33%', width: 1, backgroundColor: '#fff', opacity: 0.12 },
-  gridV2:             { position: 'absolute', top: 0, bottom: 0, left: '66%', width: 1, backgroundColor: '#fff', opacity: 0.12 },
-  playIcon:           { position: 'absolute', top: '38%', left: 0, right: 0, alignItems: 'center' },
-  topBar:             { position: 'absolute', top: 56, left: 12, right: 12, zIndex: 10,
-                        flexDirection: 'row', alignItems: 'center' },
-  segmentPill:        { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.18)',
-                        borderRadius: 99, padding: 3, gap: 2 },
-  segmentActive:      { backgroundColor: '#fff', borderRadius: 99, paddingHorizontal: 14, paddingVertical: 6 },
-  segmentActiveText:  { fontWeight: '700', fontSize: 13, color: '#000' },
-  segmentInactive:    { paddingHorizontal: 14, paddingVertical: 6, fontSize: 13,
-                        color: 'rgba(255,255,255,0.8)', fontWeight: '600' },
-  progressRow:        { position: 'absolute', top: 108, left: 12, right: 12, zIndex: 10,
-                        flexDirection: 'row', gap: 4 },
-  progressDot:        { flex: 1, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.35)' },
-  progressDotActive:  { backgroundColor: '#fff' },
-  actions:            { position: 'absolute', right: 12, bottom: 200, zIndex: 12,
-                        alignItems: 'center', gap: 20 },
-  actionBtn:          { alignItems: 'center', gap: 2 },
-  actionLabel:        { color: '#fff', fontSize: 11, fontWeight: '700', fontFamily: 'monospace' },
-  bottomInfo:         { position: 'absolute', left: 16, right: 80, bottom: 110, zIndex: 12 },
-  posterRow:          { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  posterAvatar:       { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.green,
-                        alignItems: 'center', justifyContent: 'center',
-                        borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' },
-  posterAvatarText:   { color: '#fff', fontWeight: '800', fontSize: 13 },
-  posterName:         { color: '#fff', fontWeight: '700', fontSize: 15 },
-  posterDist:         { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 1 },
-  caption:            { color: '#fff', fontSize: 16, lineHeight: 22, marginBottom: 8 },
-  tagRow:             { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  tagChip:            { backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1,
-                        borderColor: 'rgba(255,255,255,0.3)', borderRadius: 99,
-                        paddingHorizontal: 10, paddingVertical: 4 },
-  tagChipText:        { color: '#fff', fontSize: 12 },
+  container:        { width, height: ITEM_HEIGHT, backgroundColor: '#000' },
+  bg:               { ...StyleSheet.absoluteFillObject },
+  bgTop:            { position: 'absolute', top: 0, left: 0, right: 0, height: '50%', opacity: 0.85 },
+  bgMiddle:         { position: 'absolute', top: '30%', left: 0, right: 0, height: '40%', opacity: 0.6 },
+  gridH1:           { position: 'absolute', top: '33%', left: 0, right: 0, height: 1, backgroundColor: '#fff', opacity: 0.12 },
+  gridH2:           { position: 'absolute', top: '66%', left: 0, right: 0, height: 1, backgroundColor: '#fff', opacity: 0.12 },
+  gridV1:           { position: 'absolute', top: 0, bottom: 0, left: '33%', width: 1, backgroundColor: '#fff', opacity: 0.12 },
+  gridV2:           { position: 'absolute', top: 0, bottom: 0, left: '66%', width: 1, backgroundColor: '#fff', opacity: 0.12 },
+  playIcon:         { position: 'absolute', top: '38%', left: 0, right: 0, alignItems: 'center' },
+  actions:          { position: 'absolute', right: 12, bottom: 200, zIndex: 12, alignItems: 'center', gap: 20 },
+  actionBtn:        { alignItems: 'center', gap: 2 },
+  actionLabel:      { color: '#fff', fontSize: 11, fontWeight: '700', fontFamily: 'monospace' },
+  bottomInfo:       { position: 'absolute', left: 16, right: 80, bottom: 110, zIndex: 12 },
+  posterRow:        { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  posterAvatar:     { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.green,
+                      alignItems: 'center', justifyContent: 'center',
+                      borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' },
+  posterAvatarText: { color: '#fff', fontWeight: '800', fontSize: 13 },
+  posterName:       { color: '#fff', fontWeight: '700', fontSize: 15 },
+  posterDist:       { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 1 },
+  caption:          { color: '#fff', fontSize: 16, lineHeight: 22, marginBottom: 8 },
+  tagRow:           { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  tagChip:          { backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1,
+                      borderColor: 'rgba(255,255,255,0.3)', borderRadius: 99,
+                      paddingHorizontal: 10, paddingVertical: 4 },
+  tagChipText:      { color: '#fff', fontSize: 12 },
 });
 
-// ── Main screen ────────────────────────────────────────────────
 export default function Videos() {
   const { user }  = useAuth();
   const router    = useRouter();
@@ -227,7 +191,6 @@ export default function Videos() {
           <VideoCard
             video={item}
             isActive={index === activeIdx}
-            onLike={() => {}}
             onNavigate={() => router.push('/(tabs)/map')}
             onProfile={() => router.push(`/profile/${item.user_id}`)}
           />
@@ -256,8 +219,7 @@ const s = StyleSheet.create({
   empty:        { flex: 1, backgroundColor: colors.cream, alignItems: 'center', justifyContent: 'center', gap: 8 },
   emptyTitle:   { fontSize: 22, fontWeight: '800', color: colors.ink },
   emptySub:     { fontSize: 15, color: colors.ink3, textAlign: 'center', paddingHorizontal: 40 },
-  recordBtn:    { marginTop: 20, backgroundColor: colors.green, borderRadius: 16,
-                  paddingHorizontal: 28, paddingVertical: 14 },
+  recordBtn:    { marginTop: 20, backgroundColor: colors.green, borderRadius: 16, paddingHorizontal: 28, paddingVertical: 14 },
   recordBtnText:{ color: '#fff', fontWeight: '700', fontSize: 16 },
   fab:          { position: 'absolute', top: 56, right: 16, width: 44, height: 44,
                   borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.18)',
