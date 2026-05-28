@@ -117,7 +117,7 @@ app.post('/users/me/blocks/:targetId',         (req, res) => proxyReq(req, res, 
 app.delete('/users/me/blocks/:targetId',       (req, res) => proxyReq(req, res, `${SVC.user}/users/me/blocks/${req.params.targetId}`));
 
 // ── External accounts ─────────────────────────────────────────
-app.get('/users/me/external',                  (req, res) => proxyReq(req, res, `${SVC.user}/users/${req.user.sub}/external`));
+app.get('/users/me/external',                  (req, res) => proxyReq(req, res, `${SVC.user}/users/me/external`));
 app.put('/users/me/external/:platform',        (req, res) => proxyReq(req, res, `${SVC.user}/users/me/external/${req.params.platform}`));
 app.delete('/users/me/external/:platform',     (req, res) => proxyReq(req, res, `${SVC.user}/users/me/external/${req.params.platform}`));
 app.get('/users/:id/external',                 (req, res) => proxyReq(req, res, `${SVC.user}/users/${req.params.id}/external`));

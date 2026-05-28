@@ -9,7 +9,7 @@ export default function Welcome() {
     <View style={s.container}>
       <View style={s.hero}>
         <Text style={s.headline}>who's{'\n'}around{'\n'}<Text style={{ color: colors.green }}>right now</Text><Text style={{ color: colors.peach }}>?</Text></Text>
-        <Text style={s.sub}>A neighborhood map for the people you'd actually want to meet — by interest, not by feed.</Text>
+        <Text style={s.sub}>A neighborhood map for the people you'd actually want to kinnect with.</Text>
       </View>
       <View style={s.buttons}>
         <TouchableOpacity style={s.btnPrimary} onPress={() => router.push('/(auth)/signup')}>

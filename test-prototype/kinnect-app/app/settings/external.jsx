@@ -15,19 +15,21 @@ export default function ExternalAccounts() {
   const [saving,   setSaving]   = useState(false);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await getMyExternal();
-        const map = {};
-        (res.data ?? []).forEach(a => { map[a.platform] = a.handle; });
-        setHandles(map);
-      } catch {
-        Alert.alert('Error', 'Could not load linked accounts.');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+  (async () => {
+    try {
+      const res = await getMyExternal();
+      console.log('external res:', JSON.stringify(res.data));
+      const map = {};
+      (res.data ?? []).forEach(a => { map[a.platform] = a.handle; });
+      setHandles(map);
+    } catch (err) {
+      console.log('external error:', err.message, err.response?.status, JSON.stringify(err.response?.data));
+      Alert.alert('Error', 'Could not load linked accounts.');
+    } finally {
+      setLoading(false);
+    }
+  })();
+}, []);
 
   const startEdit = (platformId) => {
     setEditing(platformId);

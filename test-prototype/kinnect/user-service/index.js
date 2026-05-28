@@ -281,6 +281,20 @@ app.put('/users/me/external/:platform', async (req, res) => {
   }
 });
 
+app.get('/users/me/external', async (req, res) => {
+  const userId = req.query.user_id;
+  try {
+    const result = await db.query(
+      'SELECT platform, handle FROM external_accounts WHERE user_id = $1',
+      [userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('[get me/external]', err.message);  // ← already there but check terminal
+    res.status(500).json({ error: 'Failed to fetch external accounts' });
+  }
+});
+
 app.delete('/users/me/external/:platform', async (req, res) => {
   const userId = req.query.user_id;
   try {
