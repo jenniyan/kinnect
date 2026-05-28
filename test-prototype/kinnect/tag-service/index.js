@@ -74,25 +74,29 @@ app.get('/tags/:id', async (req, res) => {
 
 // ── Create custom tag ─────────────────────────────────────────
 // POST /tags
-// Body: { name, category }
+// Body: { name, category, parent_tag_id }
 app.post('/tags', async (req, res) => {
   const userId = req.query.user_id;
   const { name, category, parent_tag_id } = req.body;
   if (!name || !category) return res.status(400).json({ error: 'name and category required' });
 
-  const CATEGORIES = ['Sports', 'Arts', 'Outdoors', 'Food', 'Social'];
+  const CATEGORIES = [
+    'Sports', 'Arts', 'Outdoors', 'Food', 'Social',
+    'Gaming', 'Study', 'Wellness', 'Tech', 'Culture',   // ← added
+  ];
   if (!CATEGORIES.includes(category)) {
     return res.status(400).json({ error: `category must be one of: ${CATEGORIES.join(', ')}` });
   }
 
   try {
     const result = await db.query(
-  `INSERT INTO tags (name, category, is_custom, created_by, parent_tag_id)
-   VALUES ($1, $2, true, $3, $4)
-   ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
-   RETURNING id, name, category, is_custom, parent_tag_id`,
-  [name.trim(), category, userId, parent_tag_id || null]
-);
+      `INSERT INTO tags (name, category, is_custom, created_by, parent_tag_id)
+       VALUES ($1, $2, true, $3, $4)
+       ON CONFLICT (name) DO UPDATE
+         SET parent_tag_id = COALESCE(EXCLUDED.parent_tag_id, tags.parent_tag_id)
+       RETURNING id, name, category, is_custom, parent_tag_id`,
+      [name.trim(), category, userId || null, parent_tag_id || null]
+    );
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('[create tag]', err.message);

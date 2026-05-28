@@ -149,6 +149,9 @@ app.get('/rooms',                (req, res) => proxyReq(req, res, `${SVC.chat}/r
 app.get('/rooms/:id',            (req, res) => proxyReq(req, res, `${SVC.chat}/rooms/${req.params.id}`));
 app.post('/rooms/:id/members',   (req, res) => proxyReq(req, res, `${SVC.chat}/rooms/${req.params.id}/members`));
 app.get('/rooms/:id/messages',   (req, res) => proxyReq(req, res, `${SVC.chat}/rooms/${req.params.id}/messages`));
+app.delete('/rooms/:id/members/me', (req, res) =>
+  proxyReq(req, res, `${SVC.chat}/rooms/${req.params.id}/members/me`)
+);
 
 // ── Navigation ────────────────────────────────────────────────
 app.post('/navigation/route',              (req, res) => proxyReq(req, res, `${SVC.nav}/navigation/route`));

@@ -1,7 +1,4 @@
 // location-service/index.js
-// Receives GPS pings, stores in Redis with TTL, answers proximity queries.
-// Also filters out blocked users (calls user-service internally).
-
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 
 const express = require('express');
@@ -14,13 +11,11 @@ const PORT = process.env.PORT_LOCATION || 3002;
 
 const USER_SERVICE = `http://localhost:${process.env.PORT_USER || 3001}`;
 
-// Two Redis connections: one for commands, one for pub/sub publishing
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
 app.use(cors());
 app.use(express.json());
 
-// TTL for location entries (seconds). A user disappears 30s after last ping.
 const LOCATION_TTL = 30;
 const GEO_KEY      = 'geo:users';
 
@@ -28,11 +23,8 @@ const GEO_KEY      = 'geo:users';
 app.get('/health', (_req, res) => res.json({ ok: true, service: 'location-service' }));
 
 // ── Receive GPS update ────────────────────────────────────────
-// POST /location/update
-// Body: { user_id, lat, lng, timestamp? }
-// Called internally from API Gateway when it relays a WebSocket location_update event.
 app.post('/location/update', async (req, res) => {
-  const user_id = req.body.user_id || req.query.user_id;  // ← read from either
+  const user_id = req.body.user_id || req.query.user_id;
   const { lat, lng } = req.body;
   if (!user_id || lat == null || lng == null) {
     return res.status(400).json({ error: 'user_id, lat, lng required' });
@@ -41,16 +33,9 @@ app.post('/location/update', async (req, res) => {
   try {
     const ts = Date.now();
     const payload = JSON.stringify({ lat, lng, ts });
-
-    // 1. Store point with TTL key (for expiry logic)
     await redis.set(`user:${user_id}:location`, payload, 'EX', LOCATION_TTL);
-
-    // 2. Store in Redis GEO sorted set (for GEODIST / GEORADIUSBYMEMBER)
     await redis.geoadd(GEO_KEY, lng, lat, user_id);
-
-    // 3. Publish to pub/sub so all gateway instances can broadcast to nearby clients
     await redis.publish('location:updates', JSON.stringify({ user_id, lat, lng, ts }));
-
     res.json({ ok: true });
   } catch (err) {
     console.error('[location update]', err.message);
@@ -58,17 +43,13 @@ app.post('/location/update', async (req, res) => {
   }
 });
 
-
 // ── Nearby users query ────────────────────────────────────────
-// GET /location/nearby?user_id=X&radius_km=2&tag=Pickleball
-// Returns users within radius, filtered for blocks and location_visible.
 app.get('/location/nearby', async (req, res) => {
   const user_id = req.query.user_id || req.body.user_id;
-  const { radius_km = 2, tag } = req.query;
+  const { radius_km = 0.5, tag } = req.query;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
 
   try {
-    // 1. Find user's current location
     const myLocRaw = await redis.get(`user:${user_id}:location`);
     if (!myLocRaw) {
       return res.status(404).json({
@@ -77,8 +58,6 @@ app.get('/location/nearby', async (req, res) => {
     }
     const { lat, lng } = JSON.parse(myLocRaw);
 
-    // 2. GEORADIUSBYMEMBER to find nearby user IDs
-    // Redis returns: [ [userId, dist], ... ] with WITHCOORD WITHDIST
     const nearby = await redis.georadiusbymember(
       GEO_KEY,
       user_id,
@@ -91,28 +70,36 @@ app.get('/location/nearby', async (req, res) => {
       100
     );
 
-    // Filter out self
     const candidates = nearby
       .filter(entry => entry[0] !== user_id)
       .map(entry => ({
         user_id:     entry[0],
         distance_km: parseFloat(entry[1]),
-        lng_lat:     entry[2], // [lng, lat]
+        lng_lat:     entry[2],
       }));
 
     if (candidates.length === 0) return res.json({ nearby_users: [] });
 
-    // 3. Fetch profiles from user-service and apply block filter
     const ids = candidates.map(c => c.user_id);
+
+    // Fetch profiles
     const profilesRes = await axios.post(`${USER_SERVICE}/users/batch`, { user_ids: ids });
     const profileMap  = {};
     for (const u of profilesRes.data.users) profileMap[u.id] = u;
 
-    // 4. Fetch my block list
+    // Fetch subtags for all nearby users in one shot
+    let subtagMap = {};
+    try {
+      const subRes = await axios.post(`${USER_SERVICE}/users/batch-subtags`, { user_ids: ids });
+      subtagMap = subRes.data.subtags || {};
+    } catch (err) {
+      console.warn('[nearby] subtag fetch failed (non-fatal):', err.message);
+    }
+
+    // Fetch block list
     const blocksRes  = await axios.get(`${USER_SERVICE}/users/me/blocks?user_id=${user_id}`);
     const blockedSet = new Set(blocksRes.data.blocked_users.map(b => b.blocked_id));
 
-    // 5. Build response, filtering invisible and blocked users
     const result = [];
     for (const c of candidates) {
       const profile = profileMap[c.user_id];
@@ -120,11 +107,16 @@ app.get('/location/nearby', async (req, res) => {
       if (!profile.location_visible) continue;
       if (blockedSet.has(c.user_id)) continue;
 
-      // If tag filter applied, only include users with that tag
-      if (tag) {
-        const hasTag = (profile.tags || []).some(t => t.name === tag);
-        if (!hasTag) continue;
-      }
+      const userSubtags = subtagMap[c.user_id] || {};
+
+      const tags = (profile.tags || []).map(t => ({
+        id:      t.id,
+        name:    t.name || t,
+        category: t.category,
+        subtags: (userSubtags[t.id] || []),  // array of subtag name strings
+      }));
+
+      if (tag && !tags.some(t => t.name === tag)) continue;
 
       result.push({
         user_id:      c.user_id,
@@ -133,8 +125,8 @@ app.get('/location/nearby', async (req, res) => {
         distance_km:  c.distance_km,
         lat:          parseFloat(c.lng_lat[1]),
         lng:          parseFloat(c.lng_lat[0]),
-        tags:         profile.tags || [],
         avatar_url:   profile.avatar_url || null,
+        tags,
       });
     }
 
@@ -146,7 +138,6 @@ app.get('/location/nearby', async (req, res) => {
 });
 
 // ── Get a single user's last known location ───────────────────
-// GET /location/:userId
 app.get('/location/:userId', async (req, res) => {
   try {
     const raw = await redis.get(`user:${req.params.userId}:location`);
@@ -157,9 +148,7 @@ app.get('/location/:userId', async (req, res) => {
   }
 });
 
-
-// ── Remove user from location index (logout / hide) ───────────
-// DELETE /location/:userId
+// ── Remove user from location index ──────────────────────────
 app.delete('/location/:userId', async (req, res) => {
   try {
     await redis.del(`user:${req.params.userId}:location`);

@@ -329,6 +329,34 @@ app.delete('/users/me/tags/:tagId', async (req, res) => {
 });
 
 // ── Routing requests ──────────────────────────────────────────
+// ── Batch fetch subtags for multiple users ────────────────────
+// POST /users/batch-subtags
+// Body: { user_ids: string[] }
+// Returns: { [user_id]: { [parent_tag_id]: string[] } }
+app.post('/users/batch-subtags', async (req, res) => {
+  const { user_ids } = req.body;
+  if (!Array.isArray(user_ids) || user_ids.length === 0) return res.json({ subtags: {} });
+  try {
+    const result = await db.query(
+      `SELECT ut.user_id, t.name, t.parent_tag_id
+       FROM user_tags ut
+       JOIN tags t ON t.id = ut.tag_id
+       WHERE ut.user_id = ANY($1) AND t.parent_tag_id IS NOT NULL`,
+      [user_ids]
+    );
+    const subtags = {};
+    for (const row of result.rows) {
+      if (!subtags[row.user_id]) subtags[row.user_id] = {};
+      if (!subtags[row.user_id][row.parent_tag_id]) subtags[row.user_id][row.parent_tag_id] = [];
+      subtags[row.user_id][row.parent_tag_id].push(row.name);
+    }
+    res.json({ subtags });
+  } catch (err) {
+    console.error('[batch-subtags]', err.message);
+    res.status(500).json({ error: 'Failed to fetch subtags' });
+  }
+});
+
 app.post('/routing-requests', async (req, res) => {
   const requesterId = req.query.user_id;
   const { target_id } = req.body;

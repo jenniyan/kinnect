@@ -330,6 +330,30 @@ app.get('/rooms/:id/messages', async (req, res) => {
   }
 });
 
+// ── REST: Leave room ──────────────────────────────────────────
+// DELETE /rooms/:id/members/me
+app.delete('/rooms/:id/members/me', async (req, res) => {
+  const userId = req.query.user_id;
+  try {
+    await db.query(
+      'DELETE FROM room_members WHERE room_id = $1 AND user_id = $2',
+      [req.params.id, userId]
+    );
+    // If no members left, delete the room entirely
+    const remaining = await db.query(
+      'SELECT COUNT(*) FROM room_members WHERE room_id = $1',
+      [req.params.id]
+    );
+    if (parseInt(remaining.rows[0].count) === 0) {
+      await db.query('DELETE FROM rooms WHERE id = $1', [req.params.id]);
+    }
+    res.json({ left: true });
+  } catch (err) {
+    console.error('[leave room]', err.message);
+    res.status(500).json({ error: 'Failed to leave room' });
+  }
+});
+
 server.listen(PORT, () => {
   console.log(`✓ chat-service listening on :${PORT} (HTTP + Socket.io)`);
 });

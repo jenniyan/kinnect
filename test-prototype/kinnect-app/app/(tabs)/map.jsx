@@ -75,6 +75,7 @@ function UserPreviewSheet({ person, onClose, onChat, onRoute, onProfile }) {
   if (!person) return null;
   const isAnon = person.is_anonymous;
   const name   = isAnon ? 'Anonymous' : (person.display_name || 'Unknown');
+  const displayTags = tags.length > 0 ? tags : (person.tags || []);
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
@@ -97,10 +98,15 @@ function UserPreviewSheet({ person, onClose, onChat, onRoute, onProfile }) {
           {!isAnon && (profile?.bio || person.bio) ? (
             <Text style={ps.bio} numberOfLines={2}>{profile?.bio || person.bio}</Text>
           ) : null}
-          {tags.length > 0 && (
+          {displayTags.length > 0 && (
             <View style={ps.tags}>
-              {tags.slice(0, 4).map(t => (
-                <TagWithSubs key={t.id} tag={t.name} subtags={[]} cat={t.category} />
+              {displayTags.slice(0, 4).map(t => (
+                <TagWithSubs
+                  key={t.id}
+                  tag={t.name}
+                  subtags={(t.subtags || []).map(s => s.name ?? s)}
+                  cat={t.category}
+                />
               ))}
             </View>
           )}
@@ -305,11 +311,27 @@ function NearbySheet({ people, onTap, onTagFilter, activeTag, onCreateChat }) {
           : people.map(p => {
               const isAnon = p.is_anonymous;
               const name   = isAnon ? 'Anonymous' : (p.display_name || 'Unknown').split(' ')[0];
+              const tags   = (p.tags || []).filter(t => t.name).slice(0, 3);
               return (
                 <TouchableOpacity key={p.user_id} style={ns.card} onPress={() => onTap(p)}>
                   <Avatar uri={isAnon ? null : p.avatar_url} name={name} isAnon={isAnon} size={40} />
                   <Text style={ns.cardName} numberOfLines={1}>{name}</Text>
                   <Text style={ns.cardDist}>{p.distance_km?.toFixed(1)} km</Text>
+                  {tags.length > 0 && (
+                    <View style={ns.cardTags}>
+                      {tags.map(t => {
+                        const color = catColor(catFor(t.name));
+                        return (
+                          <View key={t.name} style={[ns.cardTagPill, { backgroundColor: color + '22' }]}>
+                            <Text style={[ns.cardTagText, { color }]}>{t.name}</Text>
+                            {(t.subtags || []).slice(0, 2).map(s => (
+                              <Text key={s} style={ns.cardSubtag}>#{s}</Text>
+                            ))}
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -334,9 +356,13 @@ const ns = StyleSheet.create({
   tagChipText:      { fontSize: 12, color: colors.ink2, fontWeight: '500' },
   tagChipTextActive:{ color: '#fff', fontWeight: '700' },
   cardRow:          { paddingHorizontal: 18, gap: 10, paddingBottom: 8 },
-  card:             { width: 100, backgroundColor: colors.cream, borderRadius: 14, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: colors.line },
+  card:             { width: 110, backgroundColor: colors.cream, borderRadius: 14, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: colors.line },
   cardName:         { marginTop: 8, fontSize: 13, fontWeight: '700', color: colors.ink, textAlign: 'center' },
   cardDist:         { fontSize: 10, color: colors.ink3, fontFamily: 'monospace', marginTop: 2 },
+  cardTags:         { width: '100%', gap: 3, marginTop: 6 },
+  cardTagPill:      { borderRadius: 8, paddingHorizontal: 6, paddingVertical: 3, flexDirection: 'row', flexWrap: 'wrap', gap: 3, alignItems: 'center' },
+  cardTagText:      { fontSize: 10, fontWeight: '700' },
+  cardSubtag:       { fontSize: 9, color: colors.ink3 },
   empty:            { paddingVertical: 20, paddingHorizontal: 4, color: colors.ink3, fontSize: 13 },
 });
 
@@ -346,19 +372,76 @@ export default function MapScreen() {
   return <MapScreenInner key={user?.id ?? 'logged-out'} user={user} />;
 }
 
-function MapScreenInner({ user }) {
+function MapScreenInner() {
+  const { user } = useAuth();
   const router = useRouter();
   const mapRef = useRef(null);
 
   const [myLocation,     setMyLocation]    = useState(null);
   const [nearbyUsers,    setNearbyUsers]   = useState([]);
-  const [radiusKm,       setRadiusKm]      = useState(user?.radius_km || 2);
+  const [radiusKm,       setRadiusKm]      = useState(user?.radius_km || 0.5);
+  const radiusKmRef = useRef(radiusKm);
   const [selectedUser,   setSelectedUser]  = useState(null);
   const [tagFilter,      setTagFilter]     = useState(null);
   const [showCreateChat, setShowCreateChat]= useState(false);
   const [loading,        setLoading]       = useState(true);
   const [delta,          setDelta]         = useState(0.02);
 
+  // ── fetchNearby — no visibility guard here, handled by useEffect below
+  const fetchNearby = useCallback(async (lat, lng, radius) => {
+  console.log('[fetchNearby] called with', lat, lng, radius);
+  try {
+    const res = await getNearbyUsers({ radius_km: radius });
+    console.log('[fetchNearby] got', res.data.nearby_users?.length, 'users');
+    setNearbyUsers(res.data.nearby_users || []);
+  } catch (err) {
+    console.log('[fetchNearby] error', err.message);
+  }
+}, []);
+
+  // Keep a ref so the interval always calls the latest version
+  const fetchNearbyRef = useRef(fetchNearby);
+  useEffect(() => { fetchNearbyRef.current = fetchNearby; }, [fetchNearby]);
+  
+  const userRef = useRef(user);
+  useEffect(() => { userRef.current = user; }, [user]);
+
+  // ── React to location_visible toggling
+  const myLocationRef = useRef(myLocation);
+  useEffect(() => { myLocationRef.current = myLocation; }, [myLocation]);
+
+  useEffect(() => {
+  if (user?.location_visible) {
+    const loc = myLocationRef.current;
+    if (loc) {
+      sendLocation(loc.lat, loc.lng).then(() => {
+        fetchNearbyRef.current(loc.lat, loc.lng, radiusKmRef.current);
+      });
+    }
+  } else {
+    setNearbyUsers([]);
+  }
+}, [user?.location_visible]);
+
+useEffect(() => {
+  console.log('[visibility effect] location_visible =', user?.location_visible);
+  console.log('[visibility effect] myLocation =', myLocationRef.current);
+  console.log('[visibility effect] radiusKm =', radiusKmRef.current);
+  if (user?.location_visible) {
+    const loc = myLocationRef.current;
+    if (loc) {
+      console.log('[visibility effect] calling fetchNearby');
+      fetchNearbyRef.current(loc.lat, loc.lng, radiusKmRef.current);
+    } else {
+      console.log('[visibility effect] no location yet, skipping fetch');
+    }
+  } else {
+    console.log('[visibility effect] clearing users');
+    setNearbyUsers([]);
+  }
+}, [user?.location_visible]);
+
+  // ── Mount: get location, start polling
   useEffect(() => {
     let locationSub;
     let interval;
@@ -377,20 +460,27 @@ function MapScreenInner({ user }) {
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       const { latitude: lat, longitude: lng } = pos.coords;
       setMyLocation({ lat, lng });
+      myLocationRef.current = { lat, lng };
       await sendLocation(lat, lng);
-      await fetchNearby(lat, lng, radiusKm);
+      if (user?.location_visible) await fetchNearbyRef.current(lat, lng, radiusKm);
       setLoading(false);
+
       locationSub = await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.Balanced, distanceInterval: 20 },
         async (pos) => {
           const { latitude: lat, longitude: lng } = pos.coords;
           setMyLocation({ lat, lng });
+          myLocationRef.current = { lat, lng };
           await sendLocation(lat, lng);
         }
       );
+
       interval = setInterval(() => {
-        if (myLocation) fetchNearby(myLocation.lat, myLocation.lng, radiusKm);
-      }, 15000);
+  const loc = myLocationRef.current;
+  if (loc && userRef.current?.location_visible) {
+    fetchNearbyRef.current(loc.lat, loc.lng, radiusKmRef.current);
+  }
+}, 15000);
     })();
     return () => {
       locationSub?.remove();
@@ -412,17 +502,11 @@ function MapScreenInner({ user }) {
     }
   };
 
-  const fetchNearby = useCallback(async (lat, lng, radius) => {
-    try {
-      const res = await getNearbyUsers({ radius_km: radius });
-      setNearbyUsers(res.data.nearby_users || []);
-    } catch {}
-  }, []);
-
   const handleRadiusChange = (r) => {
-    setRadiusKm(r);
-    if (myLocation) fetchNearby(myLocation.lat, myLocation.lng, r);
-  };
+  setRadiusKm(r);
+  radiusKmRef.current = r;
+  if (myLocation && userRef.current?.location_visible) fetchNearby(myLocation.lat, myLocation.lng, r);
+};
 
   const zoom = (direction) => {
     const newDelta = Math.min(Math.max(delta * (direction === 'in' ? 0.5 : 2), 0.002), 0.5);
@@ -454,7 +538,7 @@ function MapScreenInner({ user }) {
       getGatewaySocket()?.emit('routing_request_notify', {
         target_user_id: person.user_id, routing_request_id: res.data.id,
       });
-      router.push({ pathname: '/routing/[id]', params: { id: res.data.id, targetName: person.display_name || 'Anonymous' } });
+      router.push({ pathname: '/routing/[id]', params: { id: res.data.id, targetName: person.display_name || 'Anonymous', targetId: person.user_id } });
     } catch {
       Alert.alert('Error', 'Could not send routing request.');
     }
@@ -498,7 +582,6 @@ function MapScreenInner({ user }) {
               coordinate={{ latitude: person.lat, longitude: person.lng }}
               onPress={() => setSelectedUser(person)}
             >
-              {/* Map pins: show avatar image if available, else initials */}
               <View style={[s.pin, { backgroundColor: isAnon ? colors.ink3 : colors.green }]}>
                 {!isAnon && person.avatar_url ? (
                   <Image source={{ uri: person.avatar_url }} style={s.pinImg} />

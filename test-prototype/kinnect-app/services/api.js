@@ -27,7 +27,7 @@ export const uploadAvatar    = (avatarData) => api.post('/users/me/avatar', { av
 // ── Tags ──────────────────────────────────────────────────────
 export const getTags         = (params) => api.get('/tags', { params });
 export const getCategories   = ()        => api.get('/tags/categories');
-export const createTag       = (body)    => api.post('/tags', body);
+export const createTag = (body, userId) => api.post('/tags', body, { params: userId ? { user_id: userId } : {} });
 export const resolveTags     = (names)   => api.post('/tags/resolve', { names });
 export const addUserTags     = (tagIds)  => api.post('/users/me/tags', { tag_ids: tagIds });
 export const removeUserTag   = (tagId)   => api.delete(`/users/me/tags/${tagId}`);
@@ -55,6 +55,7 @@ export const getRooms        = ()     => api.get('/rooms');
 export const getRoom         = (id)   => api.get(`/rooms/${id}`);
 export const getMessages     = (roomId, params) => api.get(`/rooms/${roomId}/messages`, { params });
 export const addRoomMember   = (roomId, userId) => api.post(`/rooms/${roomId}/members`, { user_id: userId });
+export const leaveRoom = (roomId) => api.delete(`/rooms/${roomId}/members/me`);
 
 // ── Navigation ────────────────────────────────────────────────
 export const getRoute            = (body) => api.post('/navigation/route', body);

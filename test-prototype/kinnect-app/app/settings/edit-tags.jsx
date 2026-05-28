@@ -287,32 +287,36 @@ export default function EditTags() {
 };
 
   const saveSubtags = async (tagName, arr) => {
+  const previousSubs = mySubtags[tagName] || [];   // capture BEFORE setState
   setMySubtags(m => ({ ...m, [tagName]: arr }));
   const parentId = tagIdMap[tagName];
   const cat = catFor(tagName);
   if (!parentId) return;
 
   try {
-    // Create each subtag as a custom tag, then add to user_tags
+    // Add new subtags
     for (const subName of arr) {
-      // Create the custom tag with parent reference
-      const createRes = await createTag({ name: subName, category: cat, parent_tag_id: parentId });
+      if (previousSubs.includes(subName) && tagIdMap[subName]) continue; // already exists
+      const createRes = await createTag(
+        { name: subName, category: cat, parent_tag_id: parentId },
+        user.id,   // ← pass user_id so backend can record created_by
+      );
       const subTag = createRes.data;
-      // Add to user's tags
       await addUserTags([subTag.id]);
       setTagIdMap(m => ({ ...m, [subName]: subTag.id }));
     }
-    // Remove any subtags that were deselected
-    // (get current subtag ids from tagIdMap and remove ones not in arr)
-    const currentSubs = mySubtags[tagName] || [];
-    for (const old of currentSubs) {
+
+    // Remove deselected subtags
+    for (const old of previousSubs) {
       if (!arr.includes(old)) {
         const oldId = tagIdMap[old];
         if (oldId) await removeUserTag(oldId);
+        setTagIdMap(m => { const n = { ...m }; delete n[old]; return n; });
       }
     }
   } catch (err) {
     Alert.alert('Error', 'Could not save subtags. Try again.');
+    setMySubtags(m => ({ ...m, [tagName]: previousSubs })); // rollback UI
   }
 };
 

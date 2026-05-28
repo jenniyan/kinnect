@@ -1,23 +1,25 @@
 // app/(tabs)/profile.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { updateProfile, getUserTags } from '../../services/api';
 import { useAuth } from '../../services/auth';
 import { colors, catColor, catFor } from '../../constants/theme';
+import { useFocusEffect } from 'expo-router';
 
 export default function Profile() {
   const { user, signOut, refreshUser } = useAuth();
   const router = useRouter();
   const [tags, setTags] = useState([]);
 
-  useEffect(() => {
+  useFocusEffect(
+  useCallback(() => {
     if (!user?.id) return;
     getUserTags(user.id)
       .then(res => setTags(res.data?.tags ?? []))
       .catch(() => {});
-  }, [user?.id]);
-
+  }, [user?.id])
+);
   const toggleAnonymous = async (val) => {
     try { await updateProfile({ is_anonymous: val }); await refreshUser(); } catch {}
   };
