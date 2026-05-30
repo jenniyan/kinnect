@@ -22,3 +22,7 @@ The TA went over HW3 (UI Prototyping and Mockup) and HW4 (Testing). The files we
 # Week 8 Discussion 5/22/26 (In-Person Meeting):
 ### Attendees: Yuxuan, Zhengyu Dong, Xinlei Liang (Ethan), Niharika Yalla, Jennifer Yan
 The TA continued to go over HW 3 and 4, we discussed the prototype as a group, and we talked to the TA about our prototype as well. The prototype is still in progress, but it is looking really put together so far, we will continue developing it before HW 4. We also made a rough plan on how to complete HW 3 as a group. 
+
+# Week 9 Discussion 5/29/2026 (In-Person Meeting:
+### Attendees: Jennifer Yan, ZhengyuDong
+Today was Demo Day and we presented the Kinnect prototype with the class. We voted for winners in this discussion section as well.
