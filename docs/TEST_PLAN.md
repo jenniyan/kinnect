@@ -24,6 +24,24 @@ What features and components are in scope and which are explicitly out of scope?
 |Payment or subscription flows|No payment system is in scope for this version of the product.|
 
 ## 1.2 Quality Goals
+### Functional correctness
+ - Zero critical bugs in the signup, login, and JWT refresh flows across all happy paths.
+ - Nearby-user query returns only users within the selected radius ± 50 metres on a known test dataset.
+ - Chat messages are delivered to all room members within 500 ms on a local network under normal load.
+ - Tag associations are persisted correctly to the User DB and returned accurately on subsequent profile reads.
+ - Signed URL upload flow completes end-to-end with the correct GPS metadata attached to the R2 object.
+
+### Reliability & performance
+ - Backend handles 50 concurrent WebSocket connections (simulating 50 active map users) without any 500-class errors.
+ - p95 response time for REST read endpoints (GET /users/nearby, GET /users/me) under 500 ms locally.
+ - Redis location cache correctly expires stale GPS entries after 30 seconds; no ghost pins appear on the map.
+ - Zero unhandled promise rejections or uncaught exceptions in the server logs during all happy-path integration tests.
+
+### Security
+ - All endpoints except /auth/register and /auth/login return 401 when called without a valid JWT.
+ - A user cannot read messages from a chat room they are not a member of (row-level security verified by direct DB query).
+ - Signed URLs expire after 15 minutes; a request with an expired URL returns 403 from R2.
+
 ## 1.3 Risks and Priorities
 
 | Area | Why it's risky / costly | Priority (H / M / L) |
