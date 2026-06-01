@@ -16,7 +16,12 @@ What features and components are in scope and which are explicitly out of scope?
 
 | Out of Scope | Why Excluded |
 |---|---|
-| abc | def|
+|Third-party OAuth providers (Instagram, Discord login)|We mock the OAuth flow; Instagram and Discord test their own auth services.|
+|Cloudflare R2 internal reliability / CDN uptime|Third-party infrastructure — outside our control; we test our integration with it, not R2 itself.|
+|Push notification delivery (APNs / FCM)|Requires Apple/Google sandbox credentials; delivery latency is non-deterministic in CI environments.|
+|Cross-browser web testing|Kinnect is a native mobile app (React Native / Expo); browser compatibility is not applicable.|
+|Video encoding / transcoding quality|Stretch feature not yet implemented; no transcoding pipeline exists in the current architecture.|
+|Payment or subscription flows|No payment system is in scope for this version of the product.|
 
 ## 1.2 Quality Goals
 ## 1.3 Risks and Priorities
