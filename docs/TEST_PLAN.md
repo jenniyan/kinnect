@@ -3,7 +3,16 @@
 What features and components are in scope and which are explicitly out of scope?
 | In Scope | Why This Matters |
 |---|---|
-| abc | def|
+|User registration & login (POST /auth/register, POST /auth/login)|Highest user impact; touches mobile UI, API gateway, User Service, and User DB simultaneously. Auth failures block all other features.|
+|Live GPS location broadcast & nearby-user query|Core value proposition of the app. Requires real-time WebSocket connection, Redis TTL correctness, and GEORADIUSBYMEMBER accuracy.|
+|Interest tag selection and custom sub-tag creation|Tag data drives map filtering and user discovery. Incorrect storage or retrieval degrades core matchmaking.|
+|Real-time chat messaging (1:1 and group)|Socket.io delivery, Redis pub/sub fan-out, and Message DB persistence must all work together correctly.|
+|Profile read and update (bio, tags, privacy, linked accounts)|High-frequency user action; incorrect writes could expose private data or corrupt user identity.|
+|Video upload via signed URL (record → request URL → PUT to R2)|Multi-step flow across three systems (backend, mobile, R2). Failure at any step is a silent data loss.|
+|JWT authentication and token expiry handling|Security-critical; expired or invalid tokens must be rejected consistently across all services.|
+|Map radius filter (slider changes nearby user results)|Functional correctness of the GPS radius query; incorrect filtering is a core UX failure.|
+
+
 
 | Out of Scope | Why Excluded |
 |---|---|
