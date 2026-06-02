@@ -74,6 +74,28 @@ Integration test: Tests two or more real components working together — for exa
 | Cross-cutting: load & concurrency | Load test | k6 | k6 scripting language fits naturally with REST and WebSocket scenarios; provides p95/p99 latency metrics and concurrent-user simulation. |
 
 ## 1.5 Environment and Assumptions
+### Runtime
+ - Node.js 20 LTS for all backend services and test runners.
+ - Expo SDK 51 + React Native 0.74 for mobile component tests.
+ - Tests run on Ubuntu 22.04 in CI (GitHub Actions); developers run locally on macOS 14 or Windows 11 with WSL2.
+
+### Data & state
+ - Each test suite creates its own isolated data and tears it down after — no shared global state between suites.
+ - Test user accounts (e.g. test_user_001@kinnect.test) are seeded via a setup script before each integration suite runs.
+ - Message DB and User DB tests run against a dedicated Supabase test project — never the production database.
+ - Redis tests use a Docker container (via Testcontainers) so each suite starts with a clean Redis instance.
+
+### Mocks vs live
+ - Cloudflare R2: integration tests use the real R2 sandbox bucket; unit tests for the signed URL function mock the AWS SDK.
+ - Socket.io: unit tests mock the socket.emit / socket.on interface; integration tests use a live in-process Socket.io server.
+ - Instagram and Discord OAuth: fully mocked in all test environments — no real OAuth tokens are used.
+ - Push notifications (APNs/FCM): stubbed with a no-op function; delivery is not verified.
+ - GPS coordinates: synthetic coordinate arrays are injected for all location tests — no real device GPS is required.
+
+### CI/CD
+ - Unit and integration tests run on every pull request via GitHub Actions.
+ - Load tests (k6) run nightly on the staging environment — not on every PR due to execution time.
+ - A failing test blocks merge; flaky tests must be quarantined within 24 hours or the suite is disabled.
 
 ## 1.6 Team Roles
 
