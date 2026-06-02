@@ -60,15 +60,18 @@ What features and components are in scope and which are explicitly out of scope?
 
 ## 1.4 Strategy
 
-Unit test:
-Integration test:
+Unit test: Tests a single function or module in complete isolation from the rest of the system. External dependencies (database, network, Redis) are replaced with mocks or stubs. A unit test should run in milliseconds and require no running infrastructure.
+Integration test: Tests two or more real components working together — for example, the Chat Service plus a live Redis instance, or the User Service plus a real Supabase test database. Integration tests verify that the interfaces between components are correctly implemented.
 
 | Component | Test types you'll apply | Framework | Why this fit (one sentence) |
 |---|---|---|---|
-| _your frontend stack_ | | | |
-| _your backend stack_ | | | |
-| Database | | | |
-| Cross-cutting (concurrency / load — if any) | | | |
+| React Native mobile (Expo) | Unit · Component | Jest + React Native Testing Library | RNTL renders components with a test renderer and fires events — no simulator required, runs in CI. |
+| Express API gateway + services | Unit · Integration | Jest + Supertest | Supertest drives real HTTP requests against the Express app without network overhead; Jest mocks downstream services for unit tests. |
+| Socket.io Chat Service | Unit · Integration | Jest + socket.io-client (test mode) | The test client connects to a real Socket.io server in-process, verifying event delivery and room fan-out with an actual Redis pub/sub adapter. |
+| PostgreSQL (User DB + Message DB) | Integration | Jest + node-postgres (pg) | Direct SQL against a Supabase test project verifies schema correctness, RLS policies, and query performance on real data. |
+| Redis Location Cache | Integration | Jest + ioredis + @testcontainers/redis | A Docker Redis container spun up per test suite guarantees isolation; tests verify TTL expiry and GEORADIUSBYMEMBER accuracy. |
+| Cloudflare R2 media upload | Integration | Jest + aws-sdk (S3-compatible) | Tests request a signed URL from the API and perform a real PUT to the R2 sandbox bucket, verifying metadata and expiry. |
+| Cross-cutting: load & concurrency | Load test | k6 | k6 scripting language fits naturally with REST and WebSocket scenarios; provides p95/p99 latency metrics and concurrent-user simulation. |
 
 ## 1.5 Environment and Assumptions
 
