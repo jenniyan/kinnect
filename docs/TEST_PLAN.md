@@ -46,9 +46,17 @@ What features and components are in scope and which are explicitly out of scope?
 
 | Area | Why it's risky / costly | Priority (H / M / L) |
 |---|---|---|
-| e.g. Concurrent signups → duplicate emails | Race condition; data corruption | H |
-| e.g. Auth token expiry edge cases | Security implications | H |
-| e.g. Pagination on long feeds | Cosmetic; recoverable | L |
+| Concurrent signups → duplicate user emails | Race condition between two INSERT operations could create duplicate accounts, corrupting auth and profile data. | H |
+| JWT token expiry edge cases | Expired tokens that are not rejected allow unauthorised access to all user data — a direct security vulnerability. | H |
+| Redis pub/sub fan-out across Chat Service instances | If pub/sub is misconfigured, messages are silently dropped for users on different server instances — invisible data loss. | H |
+| GPS TTL expiry — ghost pins on map | Stale Redis entries could show users as nearby when they have left the area — damages core trust. | H |
+| Signed URL expiry and re-upload logic | If the client retries an upload with an expired URL, the video is silently lost with no error shown to the user. | H |
+| Row-level security on Message DB | A misconfigured Supabase RLS policy could expose private chat history to unauthorised users. | H |
+| Tag sub-tag persistence (parent_tag_id FK) | Custom tags with invalid parent references could cause silent failures in tag search and filtering. | M |
+| Socket.io reconnection after mobile background/foreground | Apps backgrounded by iOS/Android may lose the WebSocket — reconnect logic must restore chat and GPS correctly. | M |
+| Empty map state (0 nearby users) | Missing empty state handling could show a blank map with no user feedback — degrades first-run experience. | M |
+| Chat group export link generation | Incorrectly formatted export links to Instagram DM or Discord could fail silently with no error state. | L |
+| Pagination on long chat history | Cursor-based pagination could skip or duplicate messages at page boundaries — cosmetic but recoverable. | L |
 
 ## 1.4 Strategy
 
