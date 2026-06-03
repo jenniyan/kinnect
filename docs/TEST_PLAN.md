@@ -120,9 +120,9 @@ Integration test: Tests two or more real components working together — for exa
 _Last updated: __________ (commit __________)_
 
 | Category | Count | 2+ examples |
-|---|---|---|
-| Unit | | |
-| Integration | | |
+|---|---:|---|
+| Unit | At least 46 known tests across auth, shared helpers, location, and tags. Final count should include 'user.unit.test.js' once confirmed. | 'auth.unit.test.js' checks that alid JWTs pass while missing, malformed, wrong-secret, and expired tokens return 401. 'location.unit.test.js' checks invalid location updates, missing 'user_id, unknown locations, empty nearby results, and Redis deletion behavior. |
+| Integration | 25 | 'gateway.integration.test.js' checks that protected API Gateway routes reject missing/invalid JWTs while public routes remain reachable. 'location.integration.test.js' checks nearby-user queries, block-list filtering, hidden-location filtering, tag filtering, and Redis location updates. 'user.integration.test.js' checks registration, duplicate email rejection, login, password stripping, profile update, blocking self, and JWT expiry. |
 
 ## 2.3 Where the Tests live
 
