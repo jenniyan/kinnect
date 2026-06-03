@@ -197,8 +197,11 @@ Where did your **Part 1 plan** call for testing that your **implementation didn'
 
 | What the plan called for | What you actually shipped | What blocked you / what you'd add next |
 |---|---|---|
-| | | |
-| | | |
+| Unit tests for authentication, JWT behavior, and input validation | Implemented unit tests for valid/missing/expired/malformed JWTs, registration/login input validation, tag validation, and location input validation. | Add more edge cases for invalid email formats, duplicate tags, invalid coordinate ranges, and refresh-token behavior if implemented later. |
+| Integration tests for API Gateway and protected backend routes | Implemented integration tests verifying protected routes return 401 without valid JWTs, expired/wrong-secret tokens are rejected, public routes are reachable, and valid JWTs can reach the upstream proxy. | Add more tests for downstream service failures and proxy error handling. |
+| Integration tests for user account and profile flows | Implemented integration tests for registration, duplicate email rejection, login, wrong password, missing user profile, profile update, blocking self, and JWT 7-day expiry. | Add tests for phone-based login, stronger profile validation, and database error paths. |
+| Integration tests for location discovery and Redis-backed nearby-user behavior | Implemented tests for visible nearby users, blocked-user filtering, hidden-location filtering, tag filtering, Redis location writes, empty nearby results, and location deletion. | Add real Redis/container-based tests if time allows; current tests use mocked Redis. |
+| Load, full mobile UI, real GPS, Socket.io multi-device chat, and Cloudflare R2 upload testing | Not fully implemented in the current test submission. | These require more setup, external credentials, real devices, or staging infrastructure, so they remain future test targets. |
 
 If the plan and implementation match exactly, write "N/A — implemented as planned."
 
