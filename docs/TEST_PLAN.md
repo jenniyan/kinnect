@@ -117,7 +117,7 @@ Integration test: Tests two or more real components working together — for exa
 
 ## 2.2 Tests by Category
 
-_Last updated: __________ (commit __________)_
+_Last updated: 2026-06-03 12:01 PM_
 
 | Category | Count | 2+ examples |
 |---|---:|---|
