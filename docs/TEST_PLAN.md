@@ -125,10 +125,53 @@ _Last updated: __________ (commit __________)_
 | Integration | 25 | 'gateway.integration.test.js' checks that protected API Gateway routes reject missing/invalid JWTs while public routes remain reachable. 'location.integration.test.js' checks nearby-user queries, block-list filtering, hidden-location filtering, tag filtering, and Redis location updates. 'user.integration.test.js' checks registration, duplicate email rejection, login, password stripping, profile update, blocking self, and JWT expiry. |
 
 ## 2.3 Where the Tests live
-
+ 
 ```
-[your tests/ folder structure]
+kinnect/
+├── shared/
+│   └── lib/
+│       └── auth.js                         ← extracted pure-logic helpers (testable, gets coverage)
+├── tests/
+│   ├── unit/
+│   │   ├── auth.unit.test.js               (6 tests)  — JWT middleware edge cases
+│   │   ├── user.unit.test.js               (10 tests) — register/login input validation
+│   │   ├── tags.unit.test.js               (7 tests)  — tag category validation
+│   │   ├── location.unit.test.js           (7 tests)  — location update/nearby input guards
+│   │   └── helpers.unit.test.js            (26 tests) — shared/lib/auth.js (gets real coverage %)
+│   └── integration/
+│       ├── gateway.integration.test.js     (12 tests) — JWT enforcement across all protected routes
+│       ├── user.integration.test.js        (8 tests)  — full register, login, profile, block flows
+│       └── location.integration.test.js    (5 tests)  — nearby query pipeline: Redis → profiles → filters
+└── package.json                            ← jest config + test scripts
 ```
+ 
+Run commands (the TA will copy-paste these on a fresh clone):
+ 
+```bash
+# Install dependencies (only needed once)
+npm install
+ 
+# Run unit tests only
+npm run test:unit
+ 
+# Run integration tests only
+npm run test:integration
+ 
+# Run all tests
+npm test
+ 
+# Run all tests with coverage report
+npm run test:coverage
+```
+ 
+Approximate run-times:
+ 
+| Category | Time | Where it runs |
+|---|---|---|
+| Unit | ~1.2 s | local + CI |
+| Integration | ~1.0 s | local + CI |
+| e2e (if chosen) | N/A — not implemented | — |
+| Concurrent (if chosen) | N/A — not implemented | — |
 
 Run commands (the TA will copy-paste these on a fresh clone):
 
