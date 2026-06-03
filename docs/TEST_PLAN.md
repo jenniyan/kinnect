@@ -203,7 +203,11 @@ Where did your **Part 1 plan** call for testing that your **implementation didn'
 If the plan and implementation match exactly, write "N/A — implemented as planned."
 
 # Reflection
-1. What did your tests catch that you missed before? (Concrete bug, please.)
-2. What was hardest to test, and why?
-3. What test would you add next if you had more time?
-4. Where did Claude help — and where did it get things wrong?
+
+One thing our tests helped us notice was that our authentication logic needed to handle more than just the normal valid-login case. We tested missing Authorization headers, missing Bearer prefixes, expired tokens, wrong-secret tokens, and malformed tokens. This mattered because protected parts of Kinnect, like profiles, nearby users, chat rooms, and media uploads, should only work with a valid JWT.
+
+The hardest part to test was the real-time behavior, especially location updates and chat. These features involve multiple services working together, so our tests used mocks for things like Redis, axios, and database calls instead of running the entire app at once.
+
+If we had more time, we would add more full-flow tests, such as registering, choosing interests, updating location, finding nearby users, starting a chat, and posting a video. We would also add more tests for the mobile UI and real Redis behavior.
+
+Claude helped with getting started, organizing ideas, and wording parts of the assignment. However, we still had to check the actual code and test files ourselves to make sure the final report matched what we really implemented.
