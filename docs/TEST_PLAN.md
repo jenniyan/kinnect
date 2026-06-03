@@ -101,11 +101,11 @@ Integration test: Tests two or more real components working together — for exa
 
 | Member | Owns which test categories / components |
 |---|---|
-| Zhengyu Dong | |
-| Niharika Yalla | |
-| Yuxuan Huang | |
-| Xinlei Liang | |
-| Jennifer Yan | |
+| Zhengyu Dong | API Gateway and authentication tests, including JWT enforcement and protected-route behavior |
+| Niharika Yalla | TEST_PLAN.md documentation, Tests by Category section, Plan-vs-Implementation Gap, Reflection, and report cleanup |
+| Yuxuan Huang | User Service tests, including registration, login, duplicate-email handling, profile updates, and blocking behavior |
+| Xinlei Liang | Location Service tests, including Redis-backed location updates, nearby-user queries, blocked-user filtering, and hidden-location filtering |
+| Jennifer Yan | Tag Service and shared validation tests, including tag creation, category validation, login/register input validation, and location input validation |
 
 # Tests Implemented and Report
 ## 2.1 Required Minimums
