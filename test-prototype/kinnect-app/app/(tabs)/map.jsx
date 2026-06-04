@@ -380,71 +380,70 @@ function MapScreenInner() {
   const [myLocation,     setMyLocation]    = useState(null);
   const [nearbyUsers,    setNearbyUsers]   = useState([]);
   const [radiusKm,       setRadiusKm]      = useState(user?.radius_km || 0.5);
-  const radiusKmRef = useRef(radiusKm);
   const [selectedUser,   setSelectedUser]  = useState(null);
   const [tagFilter,      setTagFilter]     = useState(null);
   const [showCreateChat, setShowCreateChat]= useState(false);
   const [loading,        setLoading]       = useState(true);
   const [delta,          setDelta]         = useState(0.02);
 
-  // ── fetchNearby — no visibility guard here, handled by useEffect below
-  const fetchNearby = useCallback(async (lat, lng, radius) => {
-  console.log('[fetchNearby] called with', lat, lng, radius);
-  try {
-    const res = await getNearbyUsers({ radius_km: radius });
-    console.log('[fetchNearby] got', res.data.nearby_users?.length, 'users');
-    setNearbyUsers(res.data.nearby_users || []);
-  } catch (err) {
-    console.log('[fetchNearby] error', err.message);
-  }
-}, []);
+  // ── Refs for use inside intervals/effects with static deps
+  const myLocationRef = useRef(null);
+  const radiusKmRef   = useRef(radiusKm);
+  const userRef       = useRef(user);
 
-  // Keep a ref so the interval always calls the latest version
+  useEffect(() => { userRef.current = user; },     [user]);
+  useEffect(() => { radiusKmRef.current = radiusKm; }, [radiusKm]);
+
+  // ── fetchNearby
+  const fetchNearby = useCallback(async (lat, lng, radius) => {
+    try {
+      const res = await getNearbyUsers({ radius_km: radius });
+      setNearbyUsers(res.data.nearby_users || []);
+    } catch (err) {
+      console.log('[fetchNearby] error:', err.message);
+    }
+  }, []);
+
   const fetchNearbyRef = useRef(fetchNearby);
   useEffect(() => { fetchNearbyRef.current = fetchNearby; }, [fetchNearby]);
-  
-  const userRef = useRef(user);
-  useEffect(() => { userRef.current = user; }, [user]);
 
-  // ── React to location_visible toggling
-  const myLocationRef = useRef(myLocation);
-  useEffect(() => { myLocationRef.current = myLocation; }, [myLocation]);
+  // ── sendLocation — always use REST so we don't depend on socket being ready
+  const sendLocation = useCallback(async (lat, lng) => {
+    try {
+      // Try socket first, fall back to REST
+      const socket = getGatewaySocket();
+      if (socket?.connected) {
+        socket.emit('location_update', { lat, lng, timestamp: Date.now() });
+      } else {
+        await updateLocation(lat, lng);
+      }
+    } catch (err) {
+      // Socket failed, try REST as fallback
+      try { await updateLocation(lat, lng); } catch {}
+    }
+  }, []);
 
+  // ── React to location_visible toggling (single effect, no duplicate)
   useEffect(() => {
-  if (user?.location_visible) {
-    const loc = myLocationRef.current;
-    if (loc) {
-      sendLocation(loc.lat, loc.lng).then(() => {
-        fetchNearbyRef.current(loc.lat, loc.lng, radiusKmRef.current);
-      });
-    }
-  } else {
-    setNearbyUsers([]);
-  }
-}, [user?.location_visible]);
-
-useEffect(() => {
-  console.log('[visibility effect] location_visible =', user?.location_visible);
-  console.log('[visibility effect] myLocation =', myLocationRef.current);
-  console.log('[visibility effect] radiusKm =', radiusKmRef.current);
-  if (user?.location_visible) {
-    const loc = myLocationRef.current;
-    if (loc) {
-      console.log('[visibility effect] calling fetchNearby');
-      fetchNearbyRef.current(loc.lat, loc.lng, radiusKmRef.current);
+    if (!user) return;
+    if (user.location_visible) {
+      const loc = myLocationRef.current;
+      if (loc) {
+        // Re-plant location in Redis first, then fetch nearby
+        sendLocation(loc.lat, loc.lng).then(() => {
+          fetchNearbyRef.current(loc.lat, loc.lng, radiusKmRef.current);
+        });
+      }
     } else {
-      console.log('[visibility effect] no location yet, skipping fetch');
+      setNearbyUsers([]);
     }
-  } else {
-    console.log('[visibility effect] clearing users');
-    setNearbyUsers([]);
-  }
-}, [user?.location_visible]);
+  }, [user?.location_visible]);
 
-  // ── Mount: get location, start polling
+  // ── Mount: get location, connect socket, start polling
   useEffect(() => {
     let locationSub;
     let interval;
+
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
@@ -452,19 +451,32 @@ useEffect(() => {
         setLoading(false);
         return;
       }
-      const socket = await connectGateway();
-      socket.off('nearby_user_moved');
-      socket.on('nearby_user_moved', ({ user_id, lat, lng }) => {
-        setNearbyUsers(prev => prev.map(u => u.user_id === user_id ? { ...u, lat, lng } : u));
-      });
+
+      // Get position first before connecting socket
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       const { latitude: lat, longitude: lng } = pos.coords;
       setMyLocation({ lat, lng });
       myLocationRef.current = { lat, lng };
-      await sendLocation(lat, lng);
-      if (user?.location_visible) await fetchNearbyRef.current(lat, lng, radiusKm);
+
+      // Plant location via REST immediately (don't wait for socket)
+      try { await updateLocation(lat, lng); } catch {}
+
+      // Connect socket
+      const socket = await connectGateway();
+      socket.off('nearby_user_moved');
+      socket.on('nearby_user_moved', ({ user_id, lat: uLat, lng: uLng }) => {
+        setNearbyUsers(prev => prev.map(u =>
+          u.user_id === user_id ? { ...u, lat: uLat, lng: uLng } : u
+        ));
+      });
+
+      // Initial nearby fetch
+      if (userRef.current?.location_visible) {
+        await fetchNearbyRef.current(lat, lng, radiusKmRef.current);
+      }
       setLoading(false);
 
+      // Watch position — send updates via socket or REST
       locationSub = await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.Balanced, distanceInterval: 20 },
         async (pos) => {
@@ -475,13 +487,18 @@ useEffect(() => {
         }
       );
 
+      // Poll nearby every 15s
       interval = setInterval(() => {
-  const loc = myLocationRef.current;
-  if (loc && userRef.current?.location_visible) {
-    fetchNearbyRef.current(loc.lat, loc.lng, radiusKmRef.current);
-  }
-}, 15000);
+        const loc = myLocationRef.current;
+        if (loc && userRef.current?.location_visible) {
+          // Re-send location to keep Redis TTL alive, then fetch
+          sendLocation(loc.lat, loc.lng).then(() => {
+            fetchNearbyRef.current(loc.lat, loc.lng, radiusKmRef.current);
+          });
+        }
+      }, 15000);
     })();
+
     return () => {
       locationSub?.remove();
       clearInterval(interval);
@@ -489,31 +506,23 @@ useEffect(() => {
     };
   }, []);
 
-  const sendLocation = async (lat, lng) => {
-    try {
-      const socket = getGatewaySocket();
-      if (socket?.connected) {
-        socket.emit('location_update', { lat, lng, timestamp: Date.now() });
-      } else {
-        await updateLocation(lat, lng);
-      }
-    } catch (err) {
-      console.log('[sendLocation] error:', err.message);
+  const handleRadiusChange = (r) => {
+    setRadiusKm(r);
+    radiusKmRef.current = r;
+    const loc = myLocationRef.current;
+    if (loc && userRef.current?.location_visible) {
+      fetchNearby(loc.lat, loc.lng, r);
     }
   };
-
-  const handleRadiusChange = (r) => {
-  setRadiusKm(r);
-  radiusKmRef.current = r;
-  if (myLocation && userRef.current?.location_visible) fetchNearby(myLocation.lat, myLocation.lng, r);
-};
 
   const zoom = (direction) => {
     const newDelta = Math.min(Math.max(delta * (direction === 'in' ? 0.5 : 2), 0.002), 0.5);
     setDelta(newDelta);
     mapRef.current?.animateToRegion({
-      latitude: myLocation.lat, longitude: myLocation.lng,
-      latitudeDelta: newDelta, longitudeDelta: newDelta,
+      latitude: myLocationRef.current.lat,
+      longitude: myLocationRef.current.lng,
+      latitudeDelta: newDelta,
+      longitudeDelta: newDelta,
     }, 250);
   };
 
@@ -526,7 +535,7 @@ useEffect(() => {
     try {
       const res = await createRoom({ type: 'dm', member_ids: [person.user_id] });
       router.push(`/chat/${res.data.id}`);
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Could not start chat. Try again.');
     }
   };
@@ -538,7 +547,10 @@ useEffect(() => {
       getGatewaySocket()?.emit('routing_request_notify', {
         target_user_id: person.user_id, routing_request_id: res.data.id,
       });
-      router.push({ pathname: '/routing/[id]', params: { id: res.data.id, targetName: person.display_name || 'Anonymous', targetId: person.user_id } });
+      router.push({
+        pathname: '/routing/[id]',
+        params: { id: res.data.id, targetName: person.display_name || 'Anonymous', targetId: person.user_id },
+      });
     } catch {
       Alert.alert('Error', 'Could not send routing request.');
     }
@@ -574,7 +586,7 @@ useEffect(() => {
           strokeColor="rgba(11,110,79,0.35)"
           strokeWidth={1.5}
         />
-        {nearbyUsers.map(person => {
+        {filteredUsers.map(person => {
           const isAnon = person.is_anonymous;
           const name   = isAnon ? '?' : (person.display_name || '?').split(' ').map(w => w[0]).join('').slice(0, 2);
           return (

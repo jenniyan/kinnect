@@ -2,7 +2,7 @@
 import { useCallback, useRef, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  Dimensions, ActivityIndicator, StatusBar,
+  Dimensions, ActivityIndicator, StatusBar, Image
 } from 'react-native';
 import * as Location from 'expo-location';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -17,13 +17,17 @@ function VideoCard({ video, isActive, onNavigate, onProfile }) {
   const [posterName, setPosterName] = useState(null);
   const [liked,      setLiked]      = useState(video.liked_by_me);
   const [likes,      setLikes]      = useState(video.like_count || 0);
+  const [avatarUrl,  setAvatarUrl]  = useState(null); 
 
   useFocusEffect(useCallback(() => {
-    if (!video.user_id) return;
-    getUserById(video.user_id)
-      .then(r => setPosterName(r.data?.display_name || 'Unknown'))
-      .catch(() => setPosterName('Unknown'));
-  }, [video.user_id]));
+  if (!video.user_id) return;
+  getUserById(video.user_id)
+    .then(r => {
+      setPosterName(r.data?.display_name || 'Unknown');
+      setAvatarUrl(r.data?.avatar_url || null);
+    })
+    .catch(() => setPosterName('Unknown'));
+}, [video.user_id]));
 
   const handleLike = async () => {
     const next = !liked;
@@ -80,14 +84,18 @@ function VideoCard({ video, isActive, onNavigate, onProfile }) {
       {/* Bottom info */}
       <View style={vc.bottomInfo}>
         <TouchableOpacity style={vc.posterRow} onPress={onProfile}>
-          <View style={vc.posterAvatar}>
-            <Text style={vc.posterAvatarText}>{initials}</Text>
-          </View>
-          <View>
-            <Text style={vc.posterName}>{posterName || '…'}</Text>
-            <Text style={vc.posterDist}>📍 {dist}{dist ? ' · ' : ''}{video.lat?.toFixed(3)}, {video.lng?.toFixed(3)}</Text>
-          </View>
-        </TouchableOpacity>
+  <View style={vc.posterAvatar}>
+    {avatarUrl ? (
+      <Image source={{ uri: avatarUrl }} style={vc.posterAvatarImg} />
+    ) : (
+      <Text style={vc.posterAvatarText}>{initials}</Text>
+    )}
+  </View>
+  <View>
+    <Text style={vc.posterName}>{posterName || '…'}</Text>
+    <Text style={vc.posterDist}>📍 {dist}{dist ? ' · ' : ''}{video.lat?.toFixed(3)}, {video.lng?.toFixed(3)}</Text>
+  </View>
+</TouchableOpacity>
         {video.caption ? <Text style={vc.caption}>{video.caption}</Text> : null}
         {video.tags?.length > 0 && (
           <View style={vc.tagRow}>
@@ -130,6 +138,7 @@ const vc = StyleSheet.create({
                       borderColor: 'rgba(255,255,255,0.3)', borderRadius: 99,
                       paddingHorizontal: 10, paddingVertical: 4 },
   tagChipText:      { color: '#fff', fontSize: 12 },
+  posterAvatarImg:  { width: '100%', height: '100%', borderRadius: 19 },
 });
 
 export default function Videos() {

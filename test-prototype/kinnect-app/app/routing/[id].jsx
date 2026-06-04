@@ -1,9 +1,9 @@
 // app/routing/[id].jsx
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { updateRoutingRequest, getRouteBetweenUsers } from '../../services/api';
+import { updateRoutingRequest, getRouteBetweenUsers, getUserById } from '../../services/api';
 import { useAuth } from '../../services/auth';
 import { colors } from '../../constants/theme';
 
@@ -51,6 +51,12 @@ export default function RoutingScreen() {
   const [loading,   setLoading]   = useState(false);
   const [origin,    setOrigin]    = useState(null);
   const [dest,      setDest]      = useState(null);
+  const [targetAvatar, setTargetAvatar] = useState(null);
+
+  useEffect(() => {
+  if (!targetId) return;
+  getUserById(targetId).then(r => setTargetAvatar(r.data?.avatar_url || null)).catch(() => {});
+}, [targetId]);
 
   // Auto-accept after 3s for demo
   useEffect(() => {
@@ -161,8 +167,12 @@ export default function RoutingScreen() {
       <View style={s.card}>
         <View style={s.cardHeader}>
           <View style={s.avatar}>
-            <Text style={s.avatarText}>{(targetName || '?').charAt(0).toUpperCase()}</Text>
-          </View>
+  {targetAvatar ? (
+    <Image source={{ uri: targetAvatar }} style={s.avatarImg} />
+  ) : (
+    <Text style={s.avatarText}>{(targetName || '?').charAt(0).toUpperCase()}</Text>
+  )}
+</View>
           <View style={{ flex: 1 }}>
             <Text style={s.cardName}>Route to {targetName || 'User'}</Text>
             {routeMeta && (
@@ -231,4 +241,5 @@ const s = StyleSheet.create({
   btnSoftText:   { color: colors.ink2, fontWeight: '600', fontSize: 15 },
   btnPrimary:    { flex: 1, backgroundColor: colors.green, borderRadius: 14, padding: 14, alignItems: 'center' },
   btnPrimaryText:{ color: '#fff', fontWeight: '700', fontSize: 15 },
+  avatarImg: { width: 48, height: 48, borderRadius: 24 },
 });
