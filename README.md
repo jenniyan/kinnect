@@ -1,4 +1,4 @@
-# Kinnect — Location-based Social Prototype
+# Kinnect: Location-based Social Prototype
 
 Project created for UCI IN4MATX 43 (Spring 2026). Kinnect is a location-anchored social prototype that lets nearby users discover, chat, route to, and share short videos with one another.
 
